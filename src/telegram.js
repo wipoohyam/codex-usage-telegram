@@ -21,3 +21,32 @@ export async function sendTelegramMessage(
     clearTimeout(timer);
   }
 }
+
+export async function getTelegramUpdates(
+  { token, offset, timeoutSeconds = 50, requestTimeoutMs = 60_000 },
+  fetchImpl = fetch,
+) {
+  const controller = new AbortController();
+  const effectiveTimeoutMs = Math.max(requestTimeoutMs, (timeoutSeconds + 10) * 1_000);
+  const timer = setTimeout(() => controller.abort(), effectiveTimeoutMs);
+  try {
+    const query = new URLSearchParams({
+      timeout: String(timeoutSeconds),
+      allowed_updates: JSON.stringify(["message"]),
+    });
+    if (offset !== undefined && offset !== null) query.set("offset", String(offset));
+
+    const response = await fetchImpl(
+      `https://api.telegram.org/bot${token}/getUpdates?${query.toString()}`,
+      { signal: controller.signal },
+    );
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.ok) {
+      const description = payload?.description || `HTTP ${response.status}`;
+      throw new Error(`Telegram updates failed: ${description}`);
+    }
+    return Array.isArray(payload.result) ? payload.result : [];
+  } finally {
+    clearTimeout(timer);
+  }
+}

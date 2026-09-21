@@ -39,6 +39,11 @@ export function loadConfig(env = process.env, { requireTelegram = true } = {}) {
       positiveNumber(env.POLL_INTERVAL_MINUTES, 90, "POLL_INTERVAL_MINUTES") * 60_000,
     requestTimeoutMs:
       positiveNumber(env.REQUEST_TIMEOUT_SECONDS, 30, "REQUEST_TIMEOUT_SECONDS") * 1_000,
+    telegramLongPollSeconds: positiveNumber(
+      env.TELEGRAM_LONG_POLL_SECONDS,
+      50,
+      "TELEGRAM_LONG_POLL_SECONDS",
+    ),
     timeZone,
     notifyMode,
     codexCommand: (env.CODEX_COMMAND || "codex").trim(),

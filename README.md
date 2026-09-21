@@ -10,6 +10,8 @@ The monitor reads account metadata through the official Codex App Server. It doe
 - Recognizes five-hour and weekly windows by their duration
 - Reports earned reset-credit count and the nearest known expiration
 - Polls every 90 minutes by default
+- Responds immediately to `/status` through Telegram long polling
+- Requires no public port, webhook, domain, or web server
 - Sends every report, or only changed reports
 - Suppresses duplicate error notifications
 - Stores ChatGPT authentication in a private Docker volume
@@ -55,6 +57,8 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
    docker compose up -d
    ```
 
+Send `/status` to your bot whenever you want an immediate report. `/start` and `/help` show the available command. If the bot previously used a webhook, remove that webhook before using long polling.
+
 The `codex-auth` volume contains access tokens. Treat it like a password, do not publish it, and protect host backups.
 
 ## Configuration
@@ -67,6 +71,7 @@ The `codex-auth` volume contains access tokens. Treat it like a password, do not
 | `TZ` | No | `Asia/Seoul` | IANA time zone used in messages |
 | `NOTIFY_MODE` | No | `always` | `always` or `changes` |
 | `REQUEST_TIMEOUT_SECONDS` | No | `30` | Codex and Telegram request timeout |
+| `TELEGRAM_LONG_POLL_SECONDS` | No | `50` | Telegram command long-poll duration |
 | `CODEX_COMMAND` | No | `codex` | Codex executable path |
 | `STATE_FILE` | No | `data/state.json` | Local deduplication state |
 
@@ -85,6 +90,7 @@ Load the variables from `.env` using your shell or service manager, then use `np
 ## Security model
 
 - The app-server uses local JSONL over standard input/output; it is not exposed on a network port.
+- Telegram commands use outbound HTTPS long polling. Only the configured `TELEGRAM_CHAT_ID` is accepted.
 - Secrets are never included in status messages or application logs.
 - `.env`, local state, and Codex authentication paths are ignored by Git.
 - The application only calls read-only account methods. It does not consume reset credits.

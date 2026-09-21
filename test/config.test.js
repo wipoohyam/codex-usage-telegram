@@ -7,6 +7,7 @@ test("loads defaults with required Telegram values", () => {
   assert.equal(config.pollIntervalMs, 90 * 60_000);
   assert.equal(config.timeZone, "Asia/Seoul");
   assert.equal(config.notifyMode, "always");
+  assert.equal(config.telegramLongPollSeconds, 50);
 });
 
 test("rejects missing Telegram values", () => {

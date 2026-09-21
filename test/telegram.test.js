@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sendTelegramMessage } from "../src/telegram.js";
+import { getTelegramUpdates, sendTelegramMessage } from "../src/telegram.js";
 
 test("sends a Telegram message without exposing configuration", async () => {
   let capturedUrl;
@@ -41,4 +41,27 @@ test("returns a useful Telegram API error", async () => {
     ),
     /Bad Request/,
   );
+});
+
+test("receives Telegram commands with long polling", async () => {
+  let capturedUrl;
+  const fakeFetch = async (url) => {
+    capturedUrl = url;
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        ok: true,
+        result: [{ update_id: 7, message: { text: "/status", chat: { id: 42 } } }],
+      }),
+    };
+  };
+  const updates = await getTelegramUpdates(
+    { token: "secret", offset: 7, timeoutSeconds: 20, requestTimeoutMs: 1_000 },
+    fakeFetch,
+  );
+  assert.equal(updates[0].message.text, "/status");
+  assert.match(capturedUrl, /getUpdates/);
+  assert.match(capturedUrl, /offset=7/);
+  assert.match(capturedUrl, /timeout=20/);
 });
