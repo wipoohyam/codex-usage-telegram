@@ -33,11 +33,13 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
    https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
    ```
 
-3. Build the image:
+3. Pull the published image:
 
    ```sh
-   docker compose build
+   docker compose pull
    ```
+
+   To build the same image locally instead, run `docker compose build`.
 
 4. Sign in to ChatGPT with a device code. Enable device-code login in ChatGPT security settings first if necessary:
 
