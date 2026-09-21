@@ -1,0 +1,7 @@
+.env
+data/
+.codex/
+node_modules/
+npm-debug.log*
+.DS_Store
+coverage/

@@ -1,0 +1,18 @@
+services:
+  monitor:
+    build:
+      context: .
+    image: ${IMAGE:-codex-usage-telegram:latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      CODEX_HOME: /home/node/.codex
+      STATE_FILE: /app/data/state.json
+    volumes:
+      - codex-auth:/home/node/.codex
+      - monitor-data:/app/data
+
+volumes:
+  codex-auth:
+  monitor-data:
