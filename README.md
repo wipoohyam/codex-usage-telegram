@@ -43,6 +43,8 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
    docker compose pull
    ```
 
+   The default image is `wipoohyam/codex-usage-telegram:latest` on Docker Hub. The same image is also published as `ghcr.io/wipoohyam/codex-usage-telegram:latest`.
+
    To build the same image locally instead, run `docker compose build`.
 
 4. Sign in to ChatGPT with a device code. Enable device-code login in ChatGPT security settings first if necessary:

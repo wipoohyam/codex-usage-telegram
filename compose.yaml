@@ -2,7 +2,7 @@ services:
   monitor:
     build:
       context: .
-    image: ${IMAGE:-ghcr.io/wipoohyam/codex-usage-telegram:latest}
+    image: ${IMAGE:-wipoohyam/codex-usage-telegram:latest}
     restart: unless-stopped
     env_file:
       - .env

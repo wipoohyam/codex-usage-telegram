@@ -43,6 +43,8 @@ ChatGPT Codex 사용량 한도와 적립된 리셋 크레딧을 텔레그램으�
    docker compose pull
    ```
 
+   기본 이미지는 Docker Hub의 `wipoohyam/codex-usage-telegram:latest`입니다. 같은 이미지를 `ghcr.io/wipoohyam/codex-usage-telegram:latest`에서도 제공합니다.
+
    같은 이미지를 로컬에서 직접 만들려면 `docker compose build`를 실행합니다.
 
 4. 장치 코드를 사용해 ChatGPT에 로그인합니다. 필요한 경우 먼저 ChatGPT 보안 설정에서 장치 코드 로그인을 활성화합니다.
