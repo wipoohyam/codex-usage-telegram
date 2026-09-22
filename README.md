@@ -105,7 +105,7 @@ docker compose up -d
 If authentication expires, the bot sends a reauthentication alert with the safer server-side command. You can also start a device-code login from the configured private chat:
 
 1. Send `/login` and read the security warning.
-2. Send `/login confirm` within 60 seconds.
+2. Send `/login_confirm` within 60 seconds. `/login-confirm` and the legacy `/login confirm` form are also accepted.
 3. Open the verification URL and enter the one-time code.
 
 Only private chats are allowed. One login can run at a time, attempts have a ten-minute cooldown, and the message containing the device code is shown as a Telegram spoiler with content protection enabled. It is deleted after success, failure, or the ten-minute timeout.

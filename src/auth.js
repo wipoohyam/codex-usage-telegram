@@ -9,9 +9,11 @@ const AUTH_ERROR_PATTERNS = [
 ];
 
 export function parseLoginCommand(text = "") {
-  const match = text.trim().match(/^\/login(?:@\w+)?(?:\s+(confirm))?\s*$/i);
-  if (!match) return null;
-  return match[1] ? "confirm" : "request";
+  const command = text.trim();
+  if (/^\/login(?:@\w+)?$/i.test(command)) return "request";
+  if (/^\/login[_-]confirm(?:@\w+)?$/i.test(command)) return "confirm";
+  if (/^\/login(?:@\w+)?\s+confirm$/i.test(command)) return "confirm";
+  return null;
 }
 
 export function isAuthenticationError(error) {
@@ -26,7 +28,7 @@ export function loginWarningMessage() {
     "이 기능은 ChatGPT 장치 인증 URL과 일회용 코드를 이 개인 Telegram 채팅으로 전송합니다.",
     "코드를 받은 사람은 로그인 절차를 악용할 수 있으므로 메시지를 전달하거나 캡처해서 공유하지 마세요.",
     "",
-    "계속하려면 60초 안에 /login confirm 을 보내세요.",
+    "계속하려면 60초 안에 /login_confirm 을 보내세요.",
     "더 안전한 방법: 서버에서 docker compose run --rm codex-usage login",
   ].join("\n");
 }

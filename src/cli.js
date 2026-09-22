@@ -260,6 +260,7 @@ async function telegramCommandLoop(config, checkUsage) {
               "",
               "/status - 지금 사용량 조회",
               "/login - ChatGPT 재로그인 시작(보안 경고 및 확인 필요)",
+              "/login_confirm - 보안 경고 확인 후 로그인 계속",
             ].join("\n"),
           );
         }

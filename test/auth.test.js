@@ -9,6 +9,9 @@ import {
 
 test("parses the two-step login commands", () => {
   assert.equal(parseLoginCommand("/login"), "request");
+  assert.equal(parseLoginCommand("/login_confirm"), "confirm");
+  assert.equal(parseLoginCommand("/login_confirm@my_bot"), "confirm");
+  assert.equal(parseLoginCommand("/login-confirm"), "confirm");
   assert.equal(parseLoginCommand("/login confirm"), "confirm");
   assert.equal(parseLoginCommand("/login@my_bot confirm"), "confirm");
   assert.equal(parseLoginCommand("/login now"), null);
@@ -22,7 +25,7 @@ test("recognizes authentication failures without classifying network failures", 
 
 test("security and reauthentication messages explain the risk and recovery", () => {
   assert.match(loginWarningMessage(), /보안 경고/);
-  assert.match(loginWarningMessage(), /\/login confirm/);
+  assert.match(loginWarningMessage(), /\/login_confirm/);
   assert.match(reauthenticationMessage("token expired"), /재로그인/);
   assert.match(reauthenticationMessage("token expired"), /docker compose run --rm codex-usage login/);
 });
