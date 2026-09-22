@@ -67,6 +67,39 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
 
 Send `/status` to your bot whenever you want an immediate report. `/start` and `/help` show the available commands. If the bot previously used a webhook, remove that webhook before using long polling.
 
+### About `docker-compose.yml`
+
+Docker Compose automatically reads the included `docker-compose.yml`:
+
+```yaml
+services:
+  monitor:
+    build:
+      context: .
+    image: ${IMAGE:-wipoohyam/codex-usage-telegram:latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      CODEX_HOME: /home/node/.codex
+      STATE_FILE: /app/data/state.json
+    volumes:
+      - codex-auth:/home/node/.codex
+      - monitor-data:/app/data
+
+volumes:
+  codex-auth:
+  monitor-data:
+```
+
+`monitor` is the Compose service name, not an official Codex container. The image contains this monitoring application and the Codex CLI. Its default command is already `monitor`, so normal operation only requires:
+
+```sh
+docker compose up -d
+```
+
+`docker compose run --rm monitor login` is a one-time interactive login command for first setup or expired credentials. `docker compose run --rm monitor once` is an optional one-time notification test. Do not set either one as the service's permanent `command`: `login` would prompt again after a restart, while `once` would exit immediately and conflict with the restart policy. The temporary container is removed by `--rm`, but authentication and state remain in the named volumes.
+
 ### Telegram login
 
 If authentication expires, the bot sends a reauthentication alert with the safer server-side command. You can also start a device-code login from the configured private chat:

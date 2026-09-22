@@ -67,6 +67,39 @@ ChatGPT Codex 사용량 한도와 적립된 리셋 크레딧을 텔레그램으�
 
 즉시 사용량을 확인하려면 봇에게 `/status`를 보내세요. `/start`와 `/help`로 사용 가능한 명령어를 확인할 수 있습니다. 이 봇에서 웹훅을 사용한 적이 있다면 롱 폴링을 사용하기 전에 웹훅을 제거해야 합니다.
 
+### `docker-compose.yml` 설명
+
+Docker Compose는 저장소에 포함된 `docker-compose.yml`을 자동으로 읽습니다.
+
+```yaml
+services:
+  monitor:
+    build:
+      context: .
+    image: ${IMAGE:-wipoohyam/codex-usage-telegram:latest}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      CODEX_HOME: /home/node/.codex
+      STATE_FILE: /app/data/state.json
+    volumes:
+      - codex-auth:/home/node/.codex
+      - monitor-data:/app/data
+
+volumes:
+  codex-auth:
+  monitor-data:
+```
+
+`monitor`는 Codex 공식 컨테이너 이름이 아니라 Compose 서비스 이름입니다. 이 이미지에는 사용량 모니터 프로그램과 Codex CLI가 함께 들어 있습니다. 이미지의 기본 명령이 이미 `monitor`로 설정되어 있으므로 평상시에는 다음 명령만 실행하면 됩니다.
+
+```sh
+docker compose up -d
+```
+
+`docker compose run --rm monitor login`은 최초 설치 또는 인증 만료 시 사용하는 일회성 대화형 로그인 명령입니다. `docker compose run --rm monitor once`는 텔레그램 알림을 한 번 시험하는 선택 명령입니다. 이 둘을 서비스의 상시 `command`로 지정하면 안 됩니다. `login`은 컨테이너를 재시작할 때마다 로그인을 요구하고, `once`는 즉시 종료되어 재시작 정책과 충돌합니다. `--rm`은 임시 컨테이너만 제거하며, 인증 정보와 상태는 이름 있는 볼륨에 유지됩니다.
+
 ### 텔레그램 로그인
 
 인증이 만료되면 봇은 더 안전한 서버 측 로그인 명령어와 함께 재로그인 알림을 보냅니다. 설정한 개인 채팅에서 장치 코드 로그인을 시작할 수도 있습니다.
