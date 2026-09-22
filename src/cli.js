@@ -111,7 +111,7 @@ async function runTelegramLogin(config, checkUsage, loginState) {
     timeoutMs: config.requestTimeoutMs,
   });
   let loginId;
-  let secretMessageId;
+  const protectedMessageIds = [];
 
   try {
     await client.start();
@@ -131,27 +131,28 @@ async function runTelegramLogin(config, checkUsage, loginState) {
         (error) => ({ error }),
       );
 
-    const secretText = [
-      "🔐 Codex 장치 로그인",
-      "",
-      challenge.verificationUrl,
-      `일회용 코드: ${challenge.userCode}`,
-      "",
-      "⚠️ 이 코드를 누구에게도 전달하지 마세요.",
-      "메시지는 로그인 완료 또는 약 10분 후 삭제됩니다.",
-    ].join("\n");
-    const codeOffset = secretText.indexOf(challenge.userCode);
-    const secretMessage = await sendMessage(config, secretText, {
-      entities: [
-        {
-          type: "spoiler",
-          offset: codeOffset,
-          length: challenge.userCode.length,
-        },
-      ],
+    const instructionMessage = await sendMessage(
+      config,
+      [
+        "🔐 Codex 장치 로그인",
+        "",
+        challenge.verificationUrl,
+        "",
+        "아래 별도 메시지의 일회용 코드를 복사해 입력하세요.",
+        "⚠️ 이 코드를 누구에게도 전달하지 마세요.",
+        "두 메시지는 로그인 완료 또는 약 10분 후 삭제됩니다.",
+      ].join("\n"),
+      { protectContent: true },
+    );
+    if (instructionMessage?.message_id) {
+      protectedMessageIds.push(instructionMessage.message_id);
+    }
+
+    const codeMessage = await sendMessage(config, challenge.userCode, {
+      entities: [{ type: "spoiler", offset: 0, length: challenge.userCode.length }],
       protectContent: true,
     });
-    secretMessageId = secretMessage?.message_id;
+    if (codeMessage?.message_id) protectedMessageIds.push(codeMessage.message_id);
 
     const completionOutcome = await completionPromise;
     if (completionOutcome.error) throw completionOutcome.error;
@@ -178,14 +179,16 @@ async function runTelegramLogin(config, checkUsage, loginState) {
       `❌ ChatGPT 로그인 실패\n\n${error instanceof Error ? error.message : String(error)}`,
     ).catch(() => {});
   } finally {
-    if (secretMessageId) {
-      await deleteTelegramMessage({
-        token: config.telegramToken,
-        chatId: config.telegramChatId,
-        messageId: secretMessageId,
-        timeoutMs: config.requestTimeoutMs,
-      }).catch(() => {});
-    }
+    await Promise.all(
+      protectedMessageIds.map((messageId) =>
+        deleteTelegramMessage({
+          token: config.telegramToken,
+          chatId: config.telegramChatId,
+          messageId,
+          timeoutMs: config.requestTimeoutMs,
+        }).catch(() => {}),
+      ),
+    );
     await client.close().catch(() => {});
     loginState.active = false;
   }

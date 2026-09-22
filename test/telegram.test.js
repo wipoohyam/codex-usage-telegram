@@ -62,8 +62,8 @@ test("masks and protects a sensitive Telegram message", async () => {
     {
       token: "secret",
       chatId: "42",
-      text: "code: ABCD-EFGH",
-      entities: [{ type: "spoiler", offset: 6, length: 9 }],
+      text: "ABCD-EFGH",
+      entities: [{ type: "spoiler", offset: 0, length: 9 }],
       protectContent: true,
       timeoutMs: 1_000,
     },
@@ -71,7 +71,7 @@ test("masks and protects a sensitive Telegram message", async () => {
   );
 
   assert.deepEqual(capturedBody.entities, [
-    { type: "spoiler", offset: 6, length: 9 },
+    { type: "spoiler", offset: 0, length: 9 },
   ]);
   assert.equal(capturedBody.protect_content, true);
 });

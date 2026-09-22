@@ -47,7 +47,7 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
 
    To build the same image locally instead, run `docker compose build`.
 
-4. Sign in to ChatGPT with a device code. Enable device-code login in ChatGPT security settings first if necessary:
+4. In ChatGPT, open **Settings → Security** and enable **Codex device code authentication**. Then sign in with a device code:
 
    ```sh
    docker compose run --rm codex-usage login
@@ -108,7 +108,7 @@ If authentication expires, the bot sends a reauthentication alert with the safer
 2. Send `/login_confirm` within 60 seconds. `/login-confirm` and the legacy `/login confirm` form are also accepted.
 3. Open the verification URL and enter the one-time code.
 
-Only private chats are allowed. One login can run at a time, attempts have a ten-minute cooldown, and the message containing the device code is shown as a Telegram spoiler with content protection enabled. It is deleted after success, failure, or the ten-minute timeout.
+Only private chats are allowed. One login can run at a time and attempts have a ten-minute cooldown. The verification instructions and the copy-friendly, code-only message are sent separately with content protection enabled. The code is hidden as a Telegram spoiler, and both messages are deleted after success, failure, or the ten-minute timeout.
 
 Device codes are sensitive and can be phished. Telegram transports and temporarily stores the code, so the recommended login method remains:
 
