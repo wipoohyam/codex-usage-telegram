@@ -24,5 +24,5 @@ test("security and reauthentication messages explain the risk and recovery", () 
   assert.match(loginWarningMessage(), /보안 경고/);
   assert.match(loginWarningMessage(), /\/login confirm/);
   assert.match(reauthenticationMessage("token expired"), /재로그인/);
-  assert.match(reauthenticationMessage("token expired"), /docker compose run --rm monitor login/);
+  assert.match(reauthenticationMessage("token expired"), /docker compose run --rm codex-usage login/);
 });

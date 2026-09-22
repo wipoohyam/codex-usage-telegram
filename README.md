@@ -50,13 +50,13 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
 4. Sign in to ChatGPT with a device code. Enable device-code login in ChatGPT security settings first if necessary:
 
    ```sh
-   docker compose run --rm monitor login
+   docker compose run --rm codex-usage login
    ```
 
 5. Test one notification:
 
    ```sh
-   docker compose run --rm monitor once
+   docker compose run --rm codex-usage once
    ```
 
 6. Start the monitor:
@@ -73,7 +73,7 @@ Docker Compose automatically reads the included `docker-compose.yml`:
 
 ```yaml
 services:
-  monitor:
+  codex-usage:
     build:
       context: .
     image: ${IMAGE:-wipoohyam/codex-usage-telegram:latest}
@@ -85,20 +85,20 @@ services:
       STATE_FILE: /app/data/state.json
     volumes:
       - codex-auth:/home/node/.codex
-      - monitor-data:/app/data
+      - codex-usage-data:/app/data
 
 volumes:
   codex-auth:
-  monitor-data:
+  codex-usage-data:
 ```
 
-`monitor` is the Compose service name, not an official Codex container. The image contains this monitoring application and the Codex CLI. Its default command is already `monitor`, so normal operation only requires:
+`codex-usage` is the Compose service name, not an official Codex container. The image contains this monitoring application and the Codex CLI. Its internal default command is `monitor`, so normal operation only requires:
 
 ```sh
 docker compose up -d
 ```
 
-`docker compose run --rm monitor login` is a one-time interactive login command for first setup or expired credentials. `docker compose run --rm monitor once` is an optional one-time notification test. Do not set either one as the service's permanent `command`: `login` would prompt again after a restart, while `once` would exit immediately and conflict with the restart policy. The temporary container is removed by `--rm`, but authentication and state remain in the named volumes.
+`docker compose run --rm codex-usage login` is a one-time interactive login command for first setup or expired credentials. `docker compose run --rm codex-usage once` is an optional one-time notification test. Do not set either one as the service's permanent `command`: `login` would prompt again after a restart, while `once` would exit immediately and conflict with the restart policy. The temporary container is removed by `--rm`, but authentication and state remain in the named volumes.
 
 ### Telegram login
 
@@ -113,7 +113,7 @@ Only private chats are allowed. One login can run at a time, attempts have a ten
 Device codes are sensitive and can be phished. Telegram transports and temporarily stores the code, so the recommended login method remains:
 
 ```sh
-docker compose run --rm monitor login
+docker compose run --rm codex-usage login
 ```
 
 The `codex-auth` volume contains access tokens. Treat it like a password, do not publish it, and protect host backups.

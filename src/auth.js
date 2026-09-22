@@ -27,7 +27,7 @@ export function loginWarningMessage() {
     "코드를 받은 사람은 로그인 절차를 악용할 수 있으므로 메시지를 전달하거나 캡처해서 공유하지 마세요.",
     "",
     "계속하려면 60초 안에 /login confirm 을 보내세요.",
-    "더 안전한 방법: 서버에서 docker compose run --rm monitor login",
+    "더 안전한 방법: 서버에서 docker compose run --rm codex-usage login",
   ].join("\n");
 }
 
@@ -36,7 +36,7 @@ export function reauthenticationMessage(detail) {
     "🔐 Codex 재로그인이 필요합니다.",
     "",
     "개인 채팅에서 /login 을 보내거나 서버에서 다음 명령을 실행하세요:",
-    "docker compose run --rm monitor login",
+    "docker compose run --rm codex-usage login",
     "",
     "⚠️ /login은 일회용 인증 코드가 Telegram을 통과합니다. 보안상 서버 명령 사용을 권장합니다.",
     detail ? `\n오류: ${detail}` : "",

@@ -1,5 +1,5 @@
 services:
-  monitor:
+  codex-usage:
     build:
       context: .
     image: ${IMAGE:-wipoohyam/codex-usage-telegram:latest}
@@ -11,8 +11,8 @@ services:
       STATE_FILE: /app/data/state.json
     volumes:
       - codex-auth:/home/node/.codex
-      - monitor-data:/app/data
+      - codex-usage-data:/app/data
 
 volumes:
   codex-auth:
-  monitor-data:
+  codex-usage-data:
