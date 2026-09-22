@@ -11,7 +11,7 @@ Self-hosted Telegram notifications for ChatGPT Codex usage limits and earned res
 - Checks every 90 minutes by default
 - Responds immediately to `/status`
 - Alerts when ChatGPT authentication expires
-- Supports reauthentication from a private Telegram chat
+- Supports ChatGPT login and reauthentication from a private Telegram chat
 - Requires no public port, webhook, domain, or web server
 
 ## Install with Docker Compose
@@ -43,35 +43,51 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
 
 3. In ChatGPT, open **Settings → Security** and enable **Codex device code authentication**.
 
-4. Pull the image and sign in:
+4. Pull the image and start the service:
 
    ```sh
    docker compose pull
-   docker compose run --rm codex-usage login
-   ```
-
-5. Start the service:
-
-   ```sh
    docker compose up -d
    ```
 
-Send `/status` to the bot to verify the setup.
+5. Sign in to ChatGPT using either method below.
 
-## Telegram commands
+### Option A: Login from Telegram
 
-- `/status` — check usage now
-- `/login` — start ChatGPT reauthentication and show the security warning
-- `/login_confirm` — confirm and continue the login within 60 seconds
-- `/help` — show available commands
+In the configured private Telegram chat, send:
 
-During Telegram login, the verification instructions and one-time code arrive as separate messages. Tap the spoiler to reveal the code, then copy it. Login messages are deleted after completion, failure, or approximately ten minutes.
+```text
+/login
+```
 
-For the safer server-side login method, use:
+The bot will show a security warning. To continue, send this within 60 seconds:
+
+```text
+/login_confirm
+```
+
+The verification URL and one-time code will arrive as separate messages. Tap the spoiler to reveal the code, open the URL, and complete the ChatGPT login.
+
+Login messages are deleted after completion, failure, or approximately ten minutes.
+
+### Option B: Login on the server
+
+For the safer server-side login method, run:
 
 ```sh
 docker compose run --rm codex-usage login
 ```
+
+6. Send `/status` to the bot to verify the setup.
+
+## Telegram commands
+
+- `/status` — check usage now
+- `/login` — start ChatGPT login or reauthentication and show the security warning
+- `/login_confirm` — confirm and continue the login within 60 seconds
+- `/help` — show available commands
+
+During Telegram login, the verification instructions and one-time code arrive as separate messages. Tap the spoiler to reveal the code, then copy it. Login messages are deleted after completion, failure, or approximately ten minutes.
 
 ## Configuration
 
