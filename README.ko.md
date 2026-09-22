@@ -2,172 +2,122 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-ChatGPT Codex 사용량 한도와 적립된 리셋 크레딧을 텔레그램으로 알려주는 셀프 호스팅 도구입니다. ChatGPT 인증 정보와 텔레그램 봇 토큰은 사용자의 서버에만 보관됩니다.
-
-이 모니터는 공식 Codex App Server를 통해 계정 메타데이터를 조회합니다. 모델을 호출하지 않으며 OpenAI API 키도 필요하지 않습니다.
+ChatGPT Codex 사용량 한도와 적립된 리셋 크레딧을 텔레그램으로 알려주는 셀프 호스팅 도구입니다. 모델을 호출하지 않으며 OpenAI API 키도 필요하지 않습니다.
 
 ## 주요 기능
 
-- 반환된 모든 사용량 구간의 잔여 비율과 초기화 시각 표시
-- 구간 길이를 기준으로 5시간 및 주간 한도 식별
-- 적립된 리셋 크레딧 수와 확인 가능한 가장 가까운 만료 시각 표시
-- 기본 90분 간격 조회
-- 텔레그램 롱 폴링을 통한 `/status` 즉시 조회
-- Codex 인증 만료 시 전용 재로그인 알림 전송
-- 개인 텔레그램 채팅에서 확인 절차를 거친 `/login` 장치 코드 로그인 지원
+- 5시간·주간 및 그 밖의 사용량 구간별 잔여량과 초기화 시각 표시
+- 제공되는 경우 적립된 리셋 크레딧 표시
+- 기본 90분 간격 자동 확인
+- `/status` 명령으로 즉시 확인
+- ChatGPT 인증 만료 시 알림
+- 개인 텔레그램 채팅을 통한 재로그인 지원
 - 공개 포트, 웹훅, 도메인 및 웹 서버 불필요
-- 매번 알림 전송 또는 변경된 경우에만 전송
-- 중복 오류 알림 억제
-- 비공개 Docker 볼륨에 ChatGPT 인증 정보 저장
-- 런타임에서 Node.js 기본 모듈만 사용
 
-## Docker Compose로 빠르게 시작하기
+## Docker Compose로 설치
 
 준비물: Docker Compose와 [@BotFather](https://t.me/BotFather)에서 발급받은 텔레그램 봇 토큰
 
-1. 저장소를 복제하고 설정 파일을 만듭니다.
+1. 설정 파일을 받습니다.
 
    ```sh
+   git clone https://github.com/wipoohyam/codex-usage-telegram.git
+   cd codex-usage-telegram
    cp .env.example .env
    ```
 
-2. `.env`에 `TELEGRAM_BOT_TOKEN`과 `TELEGRAM_CHAT_ID`를 입력합니다. 채팅 ID를 확인하려면 봇에게 메시지를 보낸 후 다음 주소를 엽니다.
+2. `.env`에 텔레그램 정보를 입력합니다.
+
+   ```env
+   TELEGRAM_BOT_TOKEN=봇_토큰
+   TELEGRAM_CHAT_ID=숫자_채팅_ID
+   ```
+
+   채팅 ID를 확인하려면 봇에게 메시지를 보낸 후 다음 주소를 엽니다.
 
    ```text
    https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
    ```
 
-3. 배포된 이미지를 내려받습니다.
+   봇 사용자명이 아니라 숫자로 된 `message.chat.id`를 사용하세요. `.env`는 공개하거나 공유하면 안 됩니다.
+
+3. ChatGPT의 **설정 → 보안**에서 **Codex용 장치 코드 인증**을 활성화합니다.
+
+4. 이미지를 받고 로그인합니다.
 
    ```sh
    docker compose pull
-   ```
-
-   기본 이미지는 Docker Hub의 `wipoohyam/codex-usage-telegram:latest`입니다. 같은 이미지를 `ghcr.io/wipoohyam/codex-usage-telegram:latest`에서도 제공합니다.
-
-   같은 이미지를 로컬에서 직접 만들려면 `docker compose build`를 실행합니다.
-
-4. ChatGPT의 **설정 → 보안**에서 **Codex용 장치 코드 인증**을 활성화한 다음 장치 코드로 로그인합니다.
-
-   ```sh
    docker compose run --rm codex-usage login
    ```
 
-5. 알림을 한 번 시험 전송합니다.
-
-   ```sh
-   docker compose run --rm codex-usage once
-   ```
-
-6. 모니터를 시작합니다.
+5. 서비스를 시작합니다.
 
    ```sh
    docker compose up -d
    ```
 
-즉시 사용량을 확인하려면 봇에게 `/status`를 보내세요. `/start`와 `/help`로 사용 가능한 명령어를 확인할 수 있습니다. 이 봇에서 웹훅을 사용한 적이 있다면 롱 폴링을 사용하기 전에 웹훅을 제거해야 합니다.
+텔레그램 봇에게 `/status`를 보내 정상 작동을 확인합니다.
 
-### `docker-compose.yml` 설명
+## 텔레그램 명령어
 
-Docker Compose는 저장소에 포함된 `docker-compose.yml`을 자동으로 읽습니다.
+- `/status` — 사용량 즉시 확인
+- `/login` — 보안 경고를 확인하고 ChatGPT 재로그인 시작
+- `/login_confirm` — 60초 안에 로그인을 확인하고 계속 진행
+- `/help` — 사용 가능한 명령어 표시
 
-```yaml
-services:
-  codex-usage:
-    build:
-      context: .
-    image: ${IMAGE:-wipoohyam/codex-usage-telegram:latest}
-    restart: unless-stopped
-    env_file:
-      - .env
-    environment:
-      CODEX_HOME: /home/node/.codex
-      STATE_FILE: /app/data/state.json
-    volumes:
-      - codex-auth:/home/node/.codex
-      - codex-usage-data:/app/data
+텔레그램 로그인 시 인증 안내와 일회용 코드는 별도 메시지로 전송됩니다. 스포일러를 눌러 코드를 표시한 다음 복사하세요. 로그인 메시지는 성공·실패 또는 약 10분 후 삭제됩니다.
 
-volumes:
-  codex-auth:
-  codex-usage-data:
-```
-
-`codex-usage`는 Codex 공식 컨테이너 이름이 아니라 Compose 서비스 이름입니다. 이 이미지에는 사용량 모니터 프로그램과 Codex CLI가 함께 들어 있습니다. 이미지 내부의 기본 명령은 `monitor`로 설정되어 있으므로 평상시에는 다음 명령만 실행하면 됩니다.
-
-```sh
-docker compose up -d
-```
-
-`docker compose run --rm codex-usage login`은 최초 설치 또는 인증 만료 시 사용하는 일회성 대화형 로그인 명령입니다. `docker compose run --rm codex-usage once`는 텔레그램 알림을 한 번 시험하는 선택 명령입니다. 이 둘을 서비스의 상시 `command`로 지정하면 안 됩니다. `login`은 컨테이너를 재시작할 때마다 로그인을 요구하고, `once`는 즉시 종료되어 재시작 정책과 충돌합니다. `--rm`은 임시 컨테이너만 제거하며, 인증 정보와 상태는 이름 있는 볼륨에 유지됩니다.
-
-### 텔레그램 로그인
-
-인증이 만료되면 봇은 더 안전한 서버 측 로그인 명령어와 함께 재로그인 알림을 보냅니다. 설정한 개인 채팅에서 장치 코드 로그인을 시작할 수도 있습니다.
-
-1. `/login`을 보내고 보안 경고를 확인합니다.
-2. 60초 안에 `/login_confirm`을 보냅니다. `/login-confirm`과 기존 `/login confirm` 형식도 사용할 수 있습니다.
-3. 인증 주소를 열고 일회용 코드를 입력합니다.
-
-개인 채팅에서만 사용할 수 있습니다. 한 번에 하나의 로그인만 진행할 수 있고 시도 후 10분의 대기 시간이 적용됩니다. 보호된 인증 안내와 코드 전용 메시지는 별도로 전송됩니다. 코드는 스포일러로 가리되 콘텐츠 보호를 적용하지 않으므로 공개한 뒤 복사할 수 있습니다. 두 메시지는 성공·실패 또는 10분 제한 시간 경과 후 삭제됩니다.
-
-장치 코드는 피싱에 악용될 수 있는 민감한 정보입니다. 텔레그램이 코드를 전송하고 일시적으로 저장하므로 다음 서버 측 방식을 권장합니다.
+더 안전한 서버 측 로그인 방법은 다음과 같습니다.
 
 ```sh
 docker compose run --rm codex-usage login
 ```
 
-`codex-auth` 볼륨에는 액세스 토큰이 들어 있습니다. 비밀번호처럼 취급하고 공개하지 말아야 하며, 서버 백업도 안전하게 보호하세요.
-
 ## 설정
 
-| 변수 | 필수 | 기본값 | 설명 |
-| --- | --- | --- | --- |
-| `TELEGRAM_BOT_TOKEN` | 예 | — | 텔레그램 봇 토큰 |
-| `TELEGRAM_CHAT_ID` | 예 | — | 알림을 받을 채팅 또는 채널 ID |
-| `POLL_INTERVAL_MINUTES` | 아니요 | `90` | 조회 성공 및 실패 후 다음 조회까지의 시간 |
-| `TZ` | 아니요 | `Asia/Seoul` | 메시지에 사용할 IANA 시간대 |
-| `NOTIFY_MODE` | 아니요 | `always` | `always` 또는 `changes` |
-| `REQUEST_TIMEOUT_SECONDS` | 아니요 | `30` | Codex 및 텔레그램 요청 제한 시간 |
-| `TELEGRAM_LONG_POLL_SECONDS` | 아니요 | `50` | 텔레그램 명령 롱 폴링 시간 |
-| `CODEX_COMMAND` | 아니요 | `codex` | Codex 실행 파일 경로 |
-| `STATE_FILE` | 아니요 | `data/state.json` | 중복 방지를 위한 로컬 상태 파일 |
+| 변수 | 기본값 | 설명 |
+| --- | --- | --- |
+| `TELEGRAM_BOT_TOKEN` | 필수 | 텔레그램 봇 토큰 |
+| `TELEGRAM_CHAT_ID` | 필수 | 숫자로 된 개인 채팅 ID |
+| `POLL_INTERVAL_MINUTES` | `90` | 사용량 확인 간격 |
+| `TZ` | `Asia/Seoul` | 알림에 사용할 시간대 |
+| `NOTIFY_MODE` | `always` | `always` 또는 `changes` |
+| `REQUEST_TIMEOUT_SECONDS` | `30` | 요청 제한 시간 |
+| `TELEGRAM_LONG_POLL_SECONDS` | `50` | 텔레그램 명령 확인 대기 시간 |
 
-## Docker 없이 실행하기
+## 운영
 
-Node.js 20 이상과 Codex CLI를 설치한 후 다음 명령을 실행합니다.
+최신 이미지로 업데이트:
 
 ```sh
-npm install --global @openai/codex
-cp .env.example .env
-codex login --device-auth
+docker compose pull
+docker compose up -d --force-recreate
 ```
 
-셸이나 서비스 관리자를 사용해 `.env`의 환경변수를 불러온 다음 `npm start`를 실행합니다. 런타임 의존성을 두지 않기 위해 이 프로젝트는 `.env` 파일을 직접 읽지 않습니다.
-
-## 보안 구조
-
-- App Server는 표준 입출력을 통한 로컬 JSONL 통신만 사용하며 네트워크 포트를 열지 않습니다.
-- 텔레그램 명령은 외부로 나가는 HTTPS 롱 폴링을 사용합니다. 설정된 `TELEGRAM_CHAT_ID`에서 온 명령만 허용합니다.
-- 텔레그램 `/login`은 명시적 확인이 필요하고 개인 채팅에서만 작동합니다. 로그인 시도 횟수를 제한하고, 복사 가능한 스포일러 코드를 별도 메시지로 보내며, 절차가 끝나면 로그인 메시지를 삭제합니다.
-- 텔레그램 장치 코드 로그인은 서버에서 직접 로그인 명령을 실행하는 것보다 안전성이 낮습니다. 일회용 코드가 텔레그램을 통과한다는 점을 이해한 경우에만 사용하세요.
-- 상태 메시지나 애플리케이션 로그에 비밀값을 포함하지 않습니다.
-- `.env`, 로컬 상태 및 Codex 인증 경로는 Git에서 제외됩니다.
-- 사용량 모니터링은 읽기 전용 계정 메서드를 호출합니다. 명시적으로 실행한 `/login` 절차는 저장된 인증 정보를 갱신할 수 있지만, 애플리케이션은 리셋 크레딧을 사용하지 않습니다.
-- Docker 컨테이너는 권한이 제한된 `node` 사용자로 실행됩니다.
-
-운영체제 자격 증명 저장소를 사용할 수 없으면 Codex가 인증 정보를 `auth.json`에 저장할 수 있습니다. 이에 맞게 Docker 볼륨을 보호하세요. 자세한 내용은 [공식 인증 문서](https://learn.chatgpt.com/docs/auth#credential-storage)를 참고하세요.
-
-## 개발
+상태와 로그 확인:
 
 ```sh
-npm run check
-npm test
-docker build -t codex-usage-telegram:test .
+docker compose ps
+docker compose logs --tail=100 codex-usage
 ```
 
-## 면책 조항
+로그인 정보를 유지하면서 컨테이너 종료 및 제거:
 
-이 프로젝트는 독립적인 오픈 소스 프로젝트이며 OpenAI 또는 Telegram과 제휴 관계가 없고 이들로부터 보증받지 않습니다. Codex App Server 스키마는 변경될 수 있으므로 이미지 버전을 고정하고 업그레이드 전에 릴리스 내용을 확인하세요.
+```sh
+docker compose down
+```
+
+저장된 ChatGPT 로그인과 애플리케이션 상태를 삭제하려는 경우가 아니라면 `docker compose down -v`를 사용하지 마세요.
+
+## 보안
+
+- ChatGPT 인증 정보는 비공개 `codex-auth` Docker 볼륨에 저장됩니다.
+- 텔레그램 봇 토큰은 서버의 `.env`에만 저장됩니다.
+- 설정된 개인 `TELEGRAM_CHAT_ID`에서 온 명령만 허용됩니다.
+- 텔레그램 장치 코드는 자동 삭제 전에 복사·전달·캡처될 수 있으므로 공유하지 마세요.
+- 가능하면 서버 측 로그인 방식을 사용하세요.
+
+자세한 내용은 공식 [Codex 인증 문서](https://developers.openai.com/codex/auth)를 참고하세요.
 
 ## 라이선스
 
