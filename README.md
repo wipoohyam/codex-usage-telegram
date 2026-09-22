@@ -108,7 +108,7 @@ If authentication expires, the bot sends a reauthentication alert with the safer
 2. Send `/login_confirm` within 60 seconds. `/login-confirm` and the legacy `/login confirm` form are also accepted.
 3. Open the verification URL and enter the one-time code.
 
-Only private chats are allowed. One login can run at a time and attempts have a ten-minute cooldown. The verification instructions and the visible, copy-friendly, code-only message are sent separately with content protection enabled. Both messages are deleted after success, failure, or the ten-minute timeout.
+Only private chats are allowed. One login can run at a time and attempts have a ten-minute cooldown. The protected verification instructions and the code-only message are sent separately. The code is hidden as a spoiler but does not enable content protection, so it can be copied after revealing it. Both messages are deleted after success, failure, or the ten-minute timeout.
 
 Device codes are sensitive and can be phished. Telegram transports and temporarily stores the code, so the recommended login method remains:
 
@@ -148,7 +148,7 @@ Load the variables from `.env` using your shell or service manager, then use `np
 
 - The app-server uses local JSONL over standard input/output; it is not exposed on a network port.
 - Telegram commands use outbound HTTPS long polling. Only the configured `TELEGRAM_CHAT_ID` is accepted.
-- Telegram `/login` requires explicit confirmation, only works in a private chat, rate-limits attempts, sends the code separately, enables Telegram content protection, and deletes the login messages when the flow ends.
+- Telegram `/login` requires explicit confirmation, only works in a private chat, rate-limits attempts, sends a copyable spoiler code separately, and deletes the login messages when the flow ends.
 - A Telegram device-code login is less secure than running the login command on the host; use it only after accepting that the one-time code passes through Telegram.
 - Secrets are never included in status messages or application logs.
 - `.env`, local state, and Codex authentication paths are ignored by Git.

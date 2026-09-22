@@ -47,7 +47,7 @@ test("returns a useful Telegram API error", async () => {
   );
 });
 
-test("masks and protects a sensitive Telegram message", async () => {
+test("masks a copyable code without enabling content protection", async () => {
   let capturedBody;
   const fakeFetch = async (_url, options) => {
     capturedBody = JSON.parse(options.body);
@@ -64,7 +64,6 @@ test("masks and protects a sensitive Telegram message", async () => {
       chatId: "42",
       text: "ABCD-EFGH",
       entities: [{ type: "spoiler", offset: 0, length: 9 }],
-      protectContent: true,
       timeoutMs: 1_000,
     },
     fakeFetch,
@@ -73,7 +72,7 @@ test("masks and protects a sensitive Telegram message", async () => {
   assert.deepEqual(capturedBody.entities, [
     { type: "spoiler", offset: 0, length: 9 },
   ]);
-  assert.equal(capturedBody.protect_content, true);
+  assert.equal("protect_content" in capturedBody, false);
 });
 
 test("receives Telegram commands with long polling", async () => {
