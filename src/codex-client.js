@@ -2,12 +2,14 @@ import { spawn } from "node:child_process";
 import readline from "node:readline";
 
 export class CodexAppServerClient {
-  constructor({ command = "codex", timeoutMs = 30_000, logger = console } = {}) {
+  constructor({ command = "codex", timeoutMs = 30_000, logger = console, spawnImpl = spawn } = {}) {
     this.command = command;
     this.timeoutMs = timeoutMs;
     this.logger = logger;
+    this.spawnImpl = spawnImpl;
     this.nextId = 1;
     this.pending = new Map();
+    this.notificationWaiters = new Set();
     this.process = null;
     this.reader = null;
   }
@@ -15,7 +17,7 @@ export class CodexAppServerClient {
   async start() {
     if (this.process) return;
 
-    this.process = spawn(this.command, ["app-server"], {
+    this.process = this.spawnImpl(this.command, ["app-server"], {
       stdio: ["pipe", "pipe", "pipe"],
       env: process.env,
     });
@@ -39,7 +41,7 @@ export class CodexAppServerClient {
       clientInfo: {
         name: "codex_usage_telegram",
         title: "Codex Usage Telegram",
-        version: "0.1.0",
+        version: "0.2.0",
       },
     });
     this.notify("initialized", {});
@@ -79,6 +81,25 @@ export class CodexAppServerClient {
     return this.request("account/rateLimits/read");
   }
 
+  async startDeviceCodeLogin() {
+    return this.request("account/login/start", { type: "chatgptDeviceCode" });
+  }
+
+  async cancelLogin(loginId) {
+    return this.request("account/login/cancel", { loginId });
+  }
+
+  waitForNotification(method, { predicate = () => true, timeoutMs = this.timeoutMs } = {}) {
+    return new Promise((resolve, reject) => {
+      const waiter = { method, predicate, resolve, reject, timer: null };
+      waiter.timer = setTimeout(() => {
+        this.notificationWaiters.delete(waiter);
+        reject(new Error(`Codex notification timed out: ${method}`));
+      }, timeoutMs);
+      this.notificationWaiters.add(waiter);
+    });
+  }
+
   async close() {
     if (!this.process) return;
     this.reader?.close();
@@ -110,7 +131,10 @@ export class CodexAppServerClient {
       return;
     }
 
-    if (message.id === undefined) return;
+    if (message.id === undefined) {
+      this.#handleNotification(message);
+      return;
+    }
     const pending = this.pending.get(message.id);
     if (!pending) return;
 
@@ -127,12 +151,36 @@ export class CodexAppServerClient {
     }
   }
 
+  #handleNotification(message) {
+    for (const waiter of [...this.notificationWaiters]) {
+      if (waiter.method !== message.method) continue;
+      let matches;
+      try {
+        matches = waiter.predicate(message.params);
+      } catch (error) {
+        clearTimeout(waiter.timer);
+        this.notificationWaiters.delete(waiter);
+        waiter.reject(error);
+        continue;
+      }
+      if (!matches) continue;
+      clearTimeout(waiter.timer);
+      this.notificationWaiters.delete(waiter);
+      waiter.resolve(message.params);
+    }
+  }
+
   #failAll(error) {
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer);
       pending.reject(error);
     }
     this.pending.clear();
+    for (const waiter of this.notificationWaiters) {
+      clearTimeout(waiter.timer);
+      waiter.reject(error);
+    }
+    this.notificationWaiters.clear();
   }
 }
 

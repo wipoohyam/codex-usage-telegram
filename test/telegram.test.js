@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { getTelegramUpdates, sendTelegramMessage } from "../src/telegram.js";
+import {
+  deleteTelegramMessage,
+  getTelegramUpdates,
+  sendTelegramMessage,
+} from "../src/telegram.js";
 
 test("sends a Telegram message without exposing configuration", async () => {
   let capturedUrl;
@@ -64,4 +68,26 @@ test("receives Telegram commands with long polling", async () => {
   assert.match(capturedUrl, /getUpdates/);
   assert.match(capturedUrl, /offset=7/);
   assert.match(capturedUrl, /timeout=20/);
+});
+
+test("deletes a sensitive Telegram login message", async () => {
+  let capturedUrl;
+  let capturedBody;
+  const fakeFetch = async (url, options) => {
+    capturedUrl = url;
+    capturedBody = JSON.parse(options.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: true }),
+    };
+  };
+
+  const result = await deleteTelegramMessage(
+    { token: "secret", chatId: "42", messageId: 99, timeoutMs: 1_000 },
+    fakeFetch,
+  );
+  assert.equal(result, true);
+  assert.match(capturedUrl, /deleteMessage/);
+  assert.deepEqual(capturedBody, { chat_id: "42", message_id: 99 });
 });
