@@ -149,7 +149,6 @@ async function runTelegramLogin(config, checkUsage, loginState) {
     }
 
     const codeMessage = await sendMessage(config, challenge.userCode, {
-      entities: [{ type: "spoiler", offset: 0, length: challenge.userCode.length }],
       protectContent: true,
     });
     if (codeMessage?.message_id) protectedMessageIds.push(codeMessage.message_id);
