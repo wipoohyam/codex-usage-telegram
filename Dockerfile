@@ -1,6 +1,6 @@
 FROM node:22-bookworm-slim
 
-ARG CODEX_VERSION=0.154.0-alpha.6.2
+ARG CODEX_VERSION=0.155.1
 
 RUN npm install --global "@openai/codex@${CODEX_VERSION}" \
     && npm cache clean --force
