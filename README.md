@@ -1,5 +1,7 @@
 # Codex Usage Telegram
 
+[English](README.md) | [한국어](README.ko.md)
+
 Self-hosted Telegram notifications for your ChatGPT Codex usage windows and earned reset credits. Your ChatGPT credentials and Telegram bot token stay on your own host.
 
 The monitor reads account metadata through the official Codex App Server. It does not run a model turn and does not require an OpenAI API key.
