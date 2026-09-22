@@ -95,12 +95,13 @@ function isHelpCommand(text = "") {
   return /^\/(?:start|help)(?:@\w+)?(?:\s|$)/i.test(text.trim());
 }
 
-async function sendMessage(config, text) {
+async function sendMessage(config, text, options = {}) {
   return sendTelegramMessage({
     token: config.telegramToken,
     chatId: config.telegramChatId,
     text,
     timeoutMs: config.requestTimeoutMs,
+    ...options,
   });
 }
 
@@ -130,18 +131,26 @@ async function runTelegramLogin(config, checkUsage, loginState) {
         (error) => ({ error }),
       );
 
-    const secretMessage = await sendMessage(
-      config,
-      [
-        "🔐 Codex 장치 로그인",
-        "",
-        challenge.verificationUrl,
-        `일회용 코드: ${challenge.userCode}`,
-        "",
-        "⚠️ 이 코드를 누구에게도 전달하지 마세요.",
-        "메시지는 로그인 완료 또는 약 10분 후 삭제됩니다.",
-      ].join("\n"),
-    );
+    const secretText = [
+      "🔐 Codex 장치 로그인",
+      "",
+      challenge.verificationUrl,
+      `일회용 코드: ${challenge.userCode}`,
+      "",
+      "⚠️ 이 코드를 누구에게도 전달하지 마세요.",
+      "메시지는 로그인 완료 또는 약 10분 후 삭제됩니다.",
+    ].join("\n");
+    const codeOffset = secretText.indexOf(challenge.userCode);
+    const secretMessage = await sendMessage(config, secretText, {
+      entities: [
+        {
+          type: "spoiler",
+          offset: codeOffset,
+          length: challenge.userCode.length,
+        },
+      ],
+      protectContent: true,
+    });
     secretMessageId = secretMessage?.message_id;
 
     const completionOutcome = await completionPromise;

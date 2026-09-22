@@ -47,6 +47,35 @@ test("returns a useful Telegram API error", async () => {
   );
 });
 
+test("masks and protects a sensitive Telegram message", async () => {
+  let capturedBody;
+  const fakeFetch = async (_url, options) => {
+    capturedBody = JSON.parse(options.body);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true, result: { message_id: 2 } }),
+    };
+  };
+
+  await sendTelegramMessage(
+    {
+      token: "secret",
+      chatId: "42",
+      text: "code: ABCD-EFGH",
+      entities: [{ type: "spoiler", offset: 6, length: 9 }],
+      protectContent: true,
+      timeoutMs: 1_000,
+    },
+    fakeFetch,
+  );
+
+  assert.deepEqual(capturedBody.entities, [
+    { type: "spoiler", offset: 6, length: 9 },
+  ]);
+  assert.equal(capturedBody.protect_content, true);
+});
+
 test("receives Telegram commands with long polling", async () => {
   let capturedUrl;
   const fakeFetch = async (url) => {

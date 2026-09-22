@@ -71,7 +71,7 @@ If authentication expires, the bot sends a reauthentication alert with the safer
 2. Send `/login confirm` within 60 seconds.
 3. Open the verification URL and enter the one-time code.
 
-Only private chats are allowed. One login can run at a time, attempts have a ten-minute cooldown, and the message containing the device code is deleted after success, failure, or the ten-minute timeout.
+Only private chats are allowed. One login can run at a time, attempts have a ten-minute cooldown, and the message containing the device code is shown as a Telegram spoiler with content protection enabled. It is deleted after success, failure, or the ten-minute timeout.
 
 Device codes are sensitive and can be phished. Telegram transports and temporarily stores the code, so the recommended login method remains:
 
@@ -111,7 +111,7 @@ Load the variables from `.env` using your shell or service manager, then use `np
 
 - The app-server uses local JSONL over standard input/output; it is not exposed on a network port.
 - Telegram commands use outbound HTTPS long polling. Only the configured `TELEGRAM_CHAT_ID` is accepted.
-- Telegram `/login` requires explicit confirmation, only works in a private chat, rate-limits attempts, and deletes the code message when the flow ends.
+- Telegram `/login` requires explicit confirmation, only works in a private chat, rate-limits attempts, masks the code as a spoiler, enables Telegram content protection, and deletes the code message when the flow ends.
 - A Telegram device-code login is less secure than running the login command on the host; use it only after accepting that the one-time code passes through Telegram.
 - Secrets are never included in status messages or application logs.
 - `.env`, local state, and Codex authentication paths are ignored by Git.

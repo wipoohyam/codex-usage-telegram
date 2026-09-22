@@ -1,5 +1,5 @@
 export async function sendTelegramMessage(
-  { token, chatId, text, timeoutMs = 30_000 },
+  { token, chatId, text, timeoutMs = 30_000, entities, protectContent = false },
   fetchImpl = fetch,
 ) {
   const controller = new AbortController();
@@ -8,7 +8,13 @@ export async function sendTelegramMessage(
     const response = await fetchImpl(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text, disable_web_page_preview: true }),
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        disable_web_page_preview: true,
+        ...(entities?.length ? { entities } : {}),
+        ...(protectContent ? { protect_content: true } : {}),
+      }),
       signal: controller.signal,
     });
     const payload = await response.json().catch(() => null);
