@@ -1,9 +1,36 @@
+import { normalizeLanguage, translate } from "./i18n.js";
+
 function asFiniteNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
 
-function windowLabel(minutes) {
+function windowLabel(minutes, language) {
+  const languageCode = normalizeLanguage(language);
+  if (languageCode === "en") {
+    if (minutes === 300) return "5-hour";
+    if (minutes === 10_080) return "Weekly";
+    if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080} weeks`;
+    if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440} days`;
+    if (minutes && minutes % 60 === 0) return `${minutes / 60} hours`;
+    return minutes ? `${minutes} minutes` : "Usage";
+  }
+  if (languageCode === "zh") {
+    if (minutes === 300) return "5小时";
+    if (minutes === 10_080) return "每周";
+    if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}周`;
+    if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}天`;
+    if (minutes && minutes % 60 === 0) return `${minutes / 60}小时`;
+    return minutes ? `${minutes}分钟` : "用量";
+  }
+  if (languageCode === "ja") {
+    if (minutes === 300) return "5時間";
+    if (minutes === 10_080) return "週間";
+    if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}週`;
+    if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}日`;
+    if (minutes && minutes % 60 === 0) return `${minutes / 60}時間`;
+    return minutes ? `${minutes}分` : "使用量";
+  }
   if (minutes === 300) return "5시간";
   if (minutes === 10_080) return "주간";
   if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}주`;
@@ -72,9 +99,10 @@ export function normalizeUsage(result = {}) {
   return { windows, availableResetCount, credits };
 }
 
-function formatTimestamp(unixSeconds, timeZone) {
-  if (unixSeconds === null || unixSeconds === undefined) return "정보 없음";
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatTimestamp(unixSeconds, timeZone, language) {
+  if (unixSeconds === null || unixSeconds === undefined) return translate(language, "unknown");
+  const locales = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" };
+  return new Intl.DateTimeFormat(locales[normalizeLanguage(language)], {
     timeZone,
     month: "2-digit",
     day: "2-digit",
@@ -84,43 +112,73 @@ function formatTimestamp(unixSeconds, timeZone) {
   }).format(new Date(unixSeconds * 1_000));
 }
 
-export function formatUsageMessage(usage, { timeZone = "Asia/Seoul", now = new Date() } = {}) {
-  const lines = ["📊 Codex 사용량", ""];
+function progressBar(percent) {
+  if (percent === null) return "──────────";
+  const filled = Math.round(Math.max(0, Math.min(100, percent)) / 10);
+  return `${"█".repeat(filled)}${"░".repeat(10 - filled)}`;
+}
+
+export function formatUsageMessage(
+  usage,
+  { timeZone = "Asia/Seoul", now = new Date(), language = "ko" } = {},
+) {
+  const selectedLanguage = normalizeLanguage(language);
+  const lines = [translate(selectedLanguage, "usageTitle"), "────────────"];
 
   if (usage.windows.length === 0) {
-    lines.push("사용량 창 정보를 받지 못했습니다.");
+    lines.push(translate(selectedLanguage, "noWindows"));
   } else {
     for (const window of usage.windows) {
       const remaining =
-        window.remainingPercent === null ? "정보 없음" : `${Math.round(window.remainingPercent)}%`;
-      lines.push(`${window.label} 잔여: ${remaining}`);
-      lines.push(`초기화: ${formatTimestamp(window.resetsAt, timeZone)}`);
+        window.remainingPercent === null
+          ? translate(selectedLanguage, "unknown")
+          : `${Math.round(window.remainingPercent)}%`;
+      const label = windowLabel(window.durationMinutes, selectedLanguage);
+      lines.push(`${label}  ${progressBar(window.remainingPercent)}  ${remaining}`);
+      lines.push(`↻ ${translate(selectedLanguage, "reset")}: ${formatTimestamp(window.resetsAt, timeZone, selectedLanguage)}`);
       lines.push("");
     }
   }
 
-  lines.push(
-    `리셋 쿠폰: ${usage.availableResetCount === null ? "정보 없음" : `${usage.availableResetCount}개`}`,
-  );
+  const resetCount =
+    usage.availableResetCount === null
+      ? translate(selectedLanguage, "unknown")
+      : `${usage.availableResetCount}${
+          { ko: "개", en: "", zh: "个", ja: "個" }[selectedLanguage]
+        }`;
+  lines.push(`${translate(selectedLanguage, "resetCredits")}: ${resetCount}`);
   const expirations = (usage.credits || [])
     .filter((credit) => credit.status === "available" && credit.expiresAt)
     .map((credit) => credit.expiresAt);
   if (expirations.length > 0) {
-    lines.push(`가장 빠른 만료: ${formatTimestamp(Math.min(...expirations), timeZone)}`);
+    lines.push(
+      `${translate(selectedLanguage, "nearestExpiry")}: ${formatTimestamp(
+        Math.min(...expirations),
+        timeZone,
+        selectedLanguage,
+      )}`,
+    );
   }
   lines.push("");
+  const locales = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" };
   lines.push(
-    `조회: ${new Intl.DateTimeFormat("ko-KR", {
+    `🕒 ${translate(selectedLanguage, "checked")}: ${new Intl.DateTimeFormat(
+      locales[selectedLanguage],
+      {
       timeZone,
       month: "2-digit",
       day: "2-digit",
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-    }).format(now)}`,
+      },
+    ).format(now)}`,
   );
 
-  return lines.join("\n").replace(/\n{3,}/g, "\n\n");
+  return `${lines.join("\n").replace(/\n{3,}/g, "\n\n")}\n────────────\n${translate(
+    selectedLanguage,
+    "refreshHint",
+  )}`;
 }
 
 export function usageFingerprint(usage) {

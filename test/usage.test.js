@@ -30,14 +30,22 @@ test("normalizes five-hour and weekly windows", () => {
   assert.equal(usage.availableResetCount, 1);
 });
 
-test("formats a Korean Telegram report", () => {
+test("formats a readable Korean Telegram report", () => {
   const message = formatUsageMessage(normalizeUsage(response), {
     timeZone: "Asia/Seoul",
     now: new Date("2026-09-21T00:00:00Z"),
   });
-  assert.match(message, /5시간 잔여: 75%/);
-  assert.match(message, /주간 잔여: 60%/);
-  assert.match(message, /리셋 쿠폰: 1개/);
+  assert.match(message, /5시간\s+████████░░\s+75%/);
+  assert.match(message, /주간\s+██████░░░░\s+60%/);
+  assert.match(message, /🎟 리셋 쿠폰: 1개/);
+  assert.match(message, /\/status/);
+});
+
+test("formats English, Chinese, and Japanese reports", () => {
+  const usage = normalizeUsage(response);
+  assert.match(formatUsageMessage(usage, { language: "en" }), /Codex Usage/);
+  assert.match(formatUsageMessage(usage, { language: "zh" }), /Codex 用量/);
+  assert.match(formatUsageMessage(usage, { language: "ja" }), /Codex 使用量/);
 });
 
 test("prefers multi-bucket view without duplicating fallback", () => {

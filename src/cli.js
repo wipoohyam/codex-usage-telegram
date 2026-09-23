@@ -3,12 +3,14 @@ import { spawn } from "node:child_process";
 import {
   isAuthenticationError,
   loginWarningMessage,
+  parseLanguageCommand,
   parseLoginCommand,
   reauthenticationMessage,
 } from "./auth.js";
 import { loadConfig } from "./config.js";
 import { CodexAppServerClient, readCodexStatus } from "./codex-client.js";
 import { loadState, saveState } from "./state.js";
+import { normalizeLanguage, translate } from "./i18n.js";
 import {
   deleteTelegramMessage,
   getTelegramUpdates,
@@ -53,12 +55,17 @@ async function poll(config, { forceSend = false } = {}) {
     await sendTelegramMessage({
       token: config.telegramToken,
       chatId: config.telegramChatId,
-      text: formatUsageMessage(usage, { timeZone: config.timeZone }),
+      text: formatUsageMessage(usage, {
+        timeZone: config.timeZone,
+        language: normalizeLanguage(state.language),
+      }),
       timeoutMs: config.requestTimeoutMs,
     });
   }
 
+  const latestState = await loadState(config.stateFile);
   await saveState(config.stateFile, {
+    ...latestState,
     lastFingerprint: fingerprint,
     lastSuccessAt: new Date().toISOString(),
     lastPlanType: account.planType ?? null,
@@ -105,7 +112,7 @@ async function sendMessage(config, text, options = {}) {
   });
 }
 
-async function runTelegramLogin(config, checkUsage, loginState) {
+async function runTelegramLogin(config, checkUsage, loginState, language) {
   const client = new CodexAppServerClient({
     command: config.codexCommand,
     timeoutMs: config.requestTimeoutMs,
@@ -138,9 +145,9 @@ async function runTelegramLogin(config, checkUsage, loginState) {
         "",
         challenge.verificationUrl,
         "",
-        "아래 별도 메시지의 일회용 코드를 복사해 입력하세요.",
-        "⚠️ 이 코드를 누구에게도 전달하지 마세요.",
-        "두 메시지는 로그인 완료 또는 약 10분 후 삭제됩니다.",
+        translate(language, "loginInstruction"),
+        translate(language, "loginCodeWarning"),
+        translate(language, "loginDeleteNotice"),
       ].join("\n"),
       { protectContent: true },
     );
@@ -160,22 +167,24 @@ async function runTelegramLogin(config, checkUsage, loginState) {
       throw new Error(completion?.error || "ChatGPT 로그인이 거부되었습니다.");
     }
 
-    await sendMessage(config, "✅ ChatGPT 로그인이 완료되었습니다. 사용량을 다시 확인합니다.");
+    await sendMessage(config, translate(language, "loginSuccess"));
     try {
       await checkUsage({ forceSend: true });
     } catch (error) {
       await sendMessage(
         config,
-        `⚠️ 로그인은 완료됐지만 사용량 조회에 실패했습니다.\n\n${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        translate(language, "loginUsageFailure", {
+          detail: error instanceof Error ? error.message : String(error),
+        }),
       );
     }
   } catch (error) {
     if (loginId) await client.cancelLogin(loginId).catch(() => {});
     await sendMessage(
       config,
-      `❌ ChatGPT 로그인 실패\n\n${error instanceof Error ? error.message : String(error)}`,
+      translate(language, "loginFailure", {
+        detail: error instanceof Error ? error.message : String(error),
+      }),
     ).catch(() => {});
   } finally {
     await Promise.all(
@@ -215,9 +224,22 @@ async function telegramCommandLoop(config, checkUsage) {
         const message = update.message;
         if (String(message?.chat?.id) !== config.telegramChatId) continue;
 
+        const state = await loadState(config.stateFile);
+        const language = normalizeLanguage(state.language);
+        const languageCommand = parseLanguageCommand(message?.text);
         const loginCommand = parseLoginCommand(message?.text);
 
-        if (isStatusCommand(message?.text)) {
+        if (languageCommand) {
+          if (!languageCommand.valid) {
+            await sendMessage(config, translate(language, "languageInvalid"));
+          } else if (!languageCommand.value) {
+            await sendMessage(config, translate(language, "languageMenu", { current: language }));
+          } else {
+            const nextLanguage = normalizeLanguage(languageCommand.value);
+            await saveState(config.stateFile, { ...state, language: nextLanguage });
+            await sendMessage(config, translate(nextLanguage, "languageChanged", { language: nextLanguage }));
+          }
+        } else if (isStatusCommand(message?.text)) {
           try {
             await checkUsage({ forceSend: true });
           } catch (error) {
@@ -225,46 +247,37 @@ async function telegramCommandLoop(config, checkUsage) {
             await sendMessage(
               config,
               isAuthenticationError(error)
-                ? reauthenticationMessage(detail)
-                : `⚠️ 즉시 조회 실패\n\n${detail}`,
+                ? reauthenticationMessage(detail, language)
+                : translate(language, "statusFailure", { detail }),
             );
           }
         } else if (loginCommand) {
           if (message?.chat?.type !== "private") {
-            await sendMessage(config, "🔒 /login은 보안을 위해 Telegram 개인 채팅에서만 사용할 수 있습니다.");
+            await sendMessage(config, translate(language, "loginPrivateOnly"));
           } else if (loginCommand === "request") {
             if (loginState.active) {
-              await sendMessage(config, "⏳ 이미 ChatGPT 로그인이 진행 중입니다.");
+              await sendMessage(config, translate(language, "loginActive"));
             } else if (Date.now() < loginState.nextAllowedAt) {
-              await sendMessage(config, "⏳ 로그인 재시도는 이전 시도 후 10분이 지나야 가능합니다.");
+              await sendMessage(config, translate(language, "loginCooldown"));
             } else {
               loginState.confirmationExpiresAt = Date.now() + LOGIN_CONFIRM_WINDOW_MS;
-              await sendMessage(config, loginWarningMessage());
+              await sendMessage(config, loginWarningMessage(language));
             }
           } else if (loginState.active) {
-            await sendMessage(config, "⏳ 이미 ChatGPT 로그인이 진행 중입니다.");
+            await sendMessage(config, translate(language, "loginActive"));
           } else if (Date.now() > loginState.confirmationExpiresAt) {
-            await sendMessage(config, "확인 시간이 만료되었습니다. /login부터 다시 보내세요.");
+            await sendMessage(config, translate(language, "loginExpired"));
           } else if (Date.now() < loginState.nextAllowedAt) {
-            await sendMessage(config, "⏳ 로그인 재시도는 이전 시도 후 10분이 지나야 가능합니다.");
+            await sendMessage(config, translate(language, "loginCooldown"));
           } else {
             loginState.active = true;
             loginState.confirmationExpiresAt = 0;
             loginState.nextAllowedAt = Date.now() + LOGIN_COOLDOWN_MS;
-            await sendMessage(config, "장치 로그인 정보를 요청하고 있습니다…");
-            void runTelegramLogin(config, checkUsage, loginState);
+            await sendMessage(config, translate(language, "loginRequesting"));
+            void runTelegramLogin(config, checkUsage, loginState, language);
           }
         } else if (isHelpCommand(message?.text)) {
-          await sendMessage(
-            config,
-            [
-              "Codex 사용량 알림 봇입니다.",
-              "",
-              "/status - 지금 사용량 조회",
-              "/login - ChatGPT 재로그인 시작(보안 경고 및 확인 필요)",
-              "/login_confirm - 보안 경고 확인 후 로그인 계속",
-            ].join("\n"),
-          );
+          await sendMessage(config, translate(language, "help"));
         }
       }
     } catch (error) {
@@ -279,9 +292,10 @@ async function reportError(config, error) {
   const state = await loadState(config.stateFile).catch(() => ({}));
   const message = error instanceof Error ? error.message : String(error);
   if (state.lastError !== message) {
+    const language = normalizeLanguage(state.language);
     const text = isAuthenticationError(error)
-      ? reauthenticationMessage(message)
-      : `⚠️ Codex 사용량 조회 실패\n\n${message}`;
+      ? reauthenticationMessage(message, language)
+      : translate(language, "statusFailure", { detail: message });
     await sendMessage(config, text).catch((telegramError) => console.error(telegramError.message));
   }
   await saveState(config.stateFile, {

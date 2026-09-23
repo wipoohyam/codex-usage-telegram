@@ -12,6 +12,7 @@ Self-hosted Telegram notifications for ChatGPT Codex usage limits and earned res
 - Responds immediately to `/status`
 - Alerts when ChatGPT authentication expires
 - Supports ChatGPT login and reauthentication from a private Telegram chat
+- Supports Korean, English, Chinese, and Japanese notifications
 - Requires no public port, webhook, domain, or web server
 
 ## Install with Docker Compose
@@ -85,9 +86,12 @@ docker compose run --rm codex-usage login
 - `/status` — check usage now
 - `/login` — start ChatGPT login or reauthentication and show the security warning
 - `/login_confirm` — confirm and continue the login within 60 seconds
+- `/language` — choose Korean, English, Chinese, or Japanese (for example, `/language en`)
 - `/help` — show available commands
 
 During Telegram login, the verification instructions and one-time code arrive as separate messages. Tap the spoiler to reveal the code, then copy it. Login messages are deleted after completion, failure, or approximately ten minutes.
+
+To change the notification language, send `/language` and then use one of `ko`, `en`, `zh`, or `ja`. The selection is saved in the service state volume.
 
 ## Configuration
 

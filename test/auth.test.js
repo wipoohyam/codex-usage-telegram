@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   isAuthenticationError,
   loginWarningMessage,
+  parseLanguageCommand,
   parseLoginCommand,
   reauthenticationMessage,
 } from "../src/auth.js";
@@ -15,6 +16,14 @@ test("parses the two-step login commands", () => {
   assert.equal(parseLoginCommand("/login confirm"), "confirm");
   assert.equal(parseLoginCommand("/login@my_bot confirm"), "confirm");
   assert.equal(parseLoginCommand("/login now"), null);
+});
+
+test("parses language selection commands", () => {
+  assert.deepEqual(parseLanguageCommand("/language"), { value: null, valid: true });
+  assert.deepEqual(parseLanguageCommand("/language en"), { value: "en", valid: true });
+  assert.deepEqual(parseLanguageCommand("/lang@my_bot zh"), { value: "zh", valid: true });
+  assert.deepEqual(parseLanguageCommand("/language ja"), { value: "ja", valid: true });
+  assert.deepEqual(parseLanguageCommand("/language xx"), { value: "xx", valid: false });
 });
 
 test("recognizes authentication failures without classifying network failures", () => {

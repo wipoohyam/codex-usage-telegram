@@ -16,31 +16,42 @@ export function parseLoginCommand(text = "") {
   return null;
 }
 
+export function parseLanguageCommand(text = "") {
+  const match = text.trim().match(/^\/(?:language|lang)(?:@\w+)?(?:\s+([^\s]+))?$/i);
+  if (!match) return null;
+  const aliases = { 한국어: "ko", english: "en", 中文: "zh", 日本語: "ja" };
+  const value = match[1] ? aliases[match[1].toLowerCase()] || match[1].toLowerCase() : null;
+  return { value, valid: value === null || SUPPORTED_LANGUAGES.includes(value) };
+}
+
 export function isAuthenticationError(error) {
   const message = error instanceof Error ? error.message : String(error);
   return AUTH_ERROR_PATTERNS.some((pattern) => pattern.test(message));
 }
 
-export function loginWarningMessage() {
+export function loginWarningMessage(language = "ko") {
+  const selectedLanguage = normalizeLanguage(language);
   return [
-    "⚠️ Codex 재로그인 보안 경고",
+    translate(selectedLanguage, "loginWarningTitle"),
     "",
-    "이 기능은 ChatGPT 장치 인증 URL과 일회용 코드를 이 개인 Telegram 채팅으로 전송합니다.",
-    "코드를 받은 사람은 로그인 절차를 악용할 수 있으므로 메시지를 전달하거나 캡처해서 공유하지 마세요.",
+    translate(selectedLanguage, "loginWarningBody"),
+    translate(selectedLanguage, "loginWarningShare"),
     "",
-    "계속하려면 60초 안에 /login_confirm 을 보내세요.",
-    "더 안전한 방법: 서버에서 docker compose run --rm codex-usage login",
+    translate(selectedLanguage, "loginWarningConfirm"),
+    translate(selectedLanguage, "saferLogin"),
   ].join("\n");
 }
 
-export function reauthenticationMessage(detail) {
+export function reauthenticationMessage(detail, language = "ko") {
+  const selectedLanguage = normalizeLanguage(language);
   return [
-    "🔐 Codex 재로그인이 필요합니다.",
+    translate(selectedLanguage, "reauthTitle"),
     "",
-    "개인 채팅에서 /login 을 보내거나 서버에서 다음 명령을 실행하세요:",
+    translate(selectedLanguage, "reauthBody"),
     "docker compose run --rm codex-usage login",
     "",
-    "⚠️ /login은 일회용 인증 코드가 Telegram을 통과합니다. 보안상 서버 명령 사용을 권장합니다.",
-    detail ? `\n오류: ${detail}` : "",
+    translate(selectedLanguage, "reauthWarning"),
+    detail ? `\n${selectedLanguage === "ko" ? "오류" : selectedLanguage === "zh" ? "错误" : selectedLanguage === "ja" ? "エラー" : "Error"}: ${detail}` : "",
   ].join("\n");
 }
+import { normalizeLanguage, SUPPORTED_LANGUAGES, translate } from "./i18n.js";
