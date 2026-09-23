@@ -147,12 +147,6 @@ function formatRemaining(unixSeconds, now, language) {
   }후`.trim();
 }
 
-function progressBar(percent) {
-  if (percent === null) return "──────────";
-  const filled = Math.round(Math.max(0, Math.min(100, percent)) / 10);
-  return `${"█".repeat(filled)}${"░".repeat(10 - filled)}`;
-}
-
 export function formatUsageMessage(
   usage,
   { timeZone = "Asia/Seoul", now = new Date(), language = "ko" } = {},
@@ -170,7 +164,7 @@ export function formatUsageMessage(
           ? translate(selectedLanguage, "unknown")
           : `${Math.round(window.remainingPercent)}%`;
       const label = windowLabel(window.durationMinutes, selectedLanguage);
-      lines.push(`${label} │ ${progressBar(window.remainingPercent)} │ ${remaining}`);
+      lines.push(`${label} │ ${remaining}`);
       const resetTime = formatTimestamp(window.resetsAt, timeZone, selectedLanguage);
       const resetRemaining = formatRemaining(window.resetsAt, now, selectedLanguage);
       lines.push(

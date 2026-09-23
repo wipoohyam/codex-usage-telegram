@@ -35,8 +35,8 @@ test("formats a readable Korean Telegram report", () => {
     timeZone: "Asia/Seoul",
     now: new Date("2026-09-21T00:00:00Z"),
   });
-  assert.match(message, /5시간 │ ████████░░ │ 75%/);
-  assert.match(message, /주 간 │ ██████░░░░ │ 60%/);
+  assert.match(message, /5시간 │ 75%/);
+  assert.match(message, /주 간 │ 60%/);
   assert.match(message, /🎟 리셋 쿠폰: 1개/);
   assert.match(message, /Codex 사용량\(2026-09-21 09:00\)/);
   assert.match(message, /↳ 초기화: 2027-01-15 17:00 \(\d+일 \d+시간 후\)/);
