@@ -8,31 +8,31 @@ function asFiniteNumber(value) {
 function windowLabel(minutes, language) {
   const languageCode = normalizeLanguage(language);
   if (languageCode === "en") {
-    if (minutes === 300) return "5-hour";
-    if (minutes === 10_080) return "Weekly";
+    if (minutes === 300) return "⏰5-hour";
+    if (minutes === 10_080) return "🗓️Weekly";
     if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080} weeks`;
     if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440} days`;
     if (minutes && minutes % 60 === 0) return `${minutes / 60} hours`;
     return minutes ? `${minutes} minutes` : "Usage";
   }
   if (languageCode === "zh") {
-    if (minutes === 300) return "5小时";
-    if (minutes === 10_080) return "每 周";
+    if (minutes === 300) return "⏰5小时";
+    if (minutes === 10_080) return "🗓️每 周";
     if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}周`;
     if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}天`;
     if (minutes && minutes % 60 === 0) return `${minutes / 60}小时`;
     return minutes ? `${minutes}分钟` : "用量";
   }
   if (languageCode === "ja") {
-    if (minutes === 300) return "5時間";
-    if (minutes === 10_080) return "週 間";
+    if (minutes === 300) return "⏰5時間";
+    if (minutes === 10_080) return "🗓️週 間";
     if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}週`;
     if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}日`;
     if (minutes && minutes % 60 === 0) return `${minutes / 60}時間`;
     return minutes ? `${minutes}分` : "使用量";
   }
-  if (minutes === 300) return "5시간";
-  if (minutes === 10_080) return "주 간";
+  if (minutes === 300) return "⏰5시간";
+  if (minutes === 10_080) return "🗓️주 간";
   if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}주`;
   if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}일`;
   if (minutes && minutes % 60 === 0) return `${minutes / 60}시간`;

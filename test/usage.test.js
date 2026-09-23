@@ -24,9 +24,9 @@ const response = {
 test("normalizes five-hour and weekly windows", () => {
   const usage = normalizeUsage(response);
   assert.equal(usage.windows.length, 2);
-  assert.equal(usage.windows[0].label, "5시간");
+  assert.equal(usage.windows[0].label, "⏰5시간");
   assert.equal(usage.windows[0].remainingPercent, 75);
-  assert.equal(usage.windows[1].label, "주 간");
+  assert.equal(usage.windows[1].label, "🗓️주 간");
   assert.equal(usage.availableResetCount, 1);
 });
 
@@ -35,10 +35,10 @@ test("formats a readable Korean Telegram report", () => {
     timeZone: "Asia/Seoul",
     now: new Date("2026-09-21T00:00:00Z"),
   });
-  assert.match(message, /5시간 │ 75%/);
-  assert.match(message, /주 간 │ 60%/);
+  assert.match(message, /⏰5시간 │ 75%/);
+  assert.match(message, /🗓️주 간 │ 60%/);
   assert.match(message, /🎟 리셋 쿠폰: 1개/);
-  assert.match(message, /Codex 사용량\(2026-09-21 09:00\)/);
+  assert.match(message, /Codex 잔여 한도\(2026-09-21 09:00\)/);
   assert.match(message, /↳ 초기화: 2027-01-15 17:00 \(\d+일 \d+시간 후\)/);
   assert.match(message, /2027-01-15 17:00 \(\d+일 \d+시간 후\)/);
   assert.doesNotMatch(message, /확인:/);
@@ -47,9 +47,9 @@ test("formats a readable Korean Telegram report", () => {
 
 test("formats English, Chinese, and Japanese reports", () => {
   const usage = normalizeUsage(response);
-  assert.match(formatUsageMessage(usage, { language: "en" }), /Codex Usage/);
-  assert.match(formatUsageMessage(usage, { language: "zh" }), /Codex 用量/);
-  assert.match(formatUsageMessage(usage, { language: "ja" }), /Codex 使用量/);
+  assert.match(formatUsageMessage(usage, { language: "en" }), /Codex Remaining Limits/);
+  assert.match(formatUsageMessage(usage, { language: "zh" }), /Codex 剩余额度/);
+  assert.match(formatUsageMessage(usage, { language: "ja" }), /Codex 残り上限/);
 });
 
 test("prefers multi-bucket view without duplicating fallback", () => {
