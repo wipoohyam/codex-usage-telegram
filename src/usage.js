@@ -17,7 +17,7 @@ function windowLabel(minutes, language) {
   }
   if (languageCode === "zh") {
     if (minutes === 300) return "5小时";
-    if (minutes === 10_080) return "每周";
+    if (minutes === 10_080) return "每 周";
     if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}周`;
     if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}天`;
     if (minutes && minutes % 60 === 0) return `${minutes / 60}小时`;
@@ -25,14 +25,14 @@ function windowLabel(minutes, language) {
   }
   if (languageCode === "ja") {
     if (minutes === 300) return "5時間";
-    if (minutes === 10_080) return "週間";
+    if (minutes === 10_080) return "週 間";
     if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}週`;
     if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}日`;
     if (minutes && minutes % 60 === 0) return `${minutes / 60}時間`;
     return minutes ? `${minutes}分` : "使用量";
   }
   if (minutes === 300) return "5시간";
-  if (minutes === 10_080) return "주간";
+  if (minutes === 10_080) return "주 간";
   if (minutes && minutes % 10_080 === 0) return `${minutes / 10_080}주`;
   if (minutes && minutes % 1_440 === 0) return `${minutes / 1_440}일`;
   if (minutes && minutes % 60 === 0) return `${minutes / 60}시간`;
@@ -101,15 +101,50 @@ export function normalizeUsage(result = {}) {
 
 function formatTimestamp(unixSeconds, timeZone, language) {
   if (unixSeconds === null || unixSeconds === undefined) return translate(language, "unknown");
-  const locales = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" };
-  return new Intl.DateTimeFormat(locales[normalizeLanguage(language)], {
+  const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
+    year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(new Date(unixSeconds * 1_000));
+    hourCycle: "h23",
+  }).formatToParts(new Date(unixSeconds * 1_000));
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]));
+  return `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}`;
+}
+
+function formatRemaining(unixSeconds, now, language) {
+  if (unixSeconds === null || unixSeconds === undefined) return null;
+  const remainingMinutes = Math.max(
+    0,
+    Math.ceil((unixSeconds * 1_000 - now.getTime()) / 60_000),
+  );
+  const days = Math.floor(remainingMinutes / 1_440);
+  const hours = Math.floor(remainingMinutes / 60);
+  const minutes = String(remainingMinutes % 60).padStart(2, "0");
+  const languageCode = normalizeLanguage(language);
+  if (languageCode === "en") {
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours % 24 > 0) parts.push(`${hours % 24}h`);
+    if (Number(minutes) > 0 || parts.length === 0) parts.push(`${Number(minutes)}m`);
+    return `in ${parts.join(" ")}`;
+  }
+  if (languageCode === "zh") {
+    return `还剩${days > 0 ? `${days}天` : ""}${hours % 24 > 0 ? `${hours % 24}小时` : ""}${
+      Number(minutes) > 0 || (days === 0 && hours % 24 === 0) ? `${Number(minutes)}分` : ""
+    }`;
+  }
+  if (languageCode === "ja") {
+    return `あと${days > 0 ? `${days}日` : ""}${hours % 24 > 0 ? `${hours % 24}時間` : ""}${
+      Number(minutes) > 0 || (days === 0 && hours % 24 === 0) ? `${Number(minutes)}分` : ""
+    }`;
+  }
+  return `${days > 0 ? `${days}일 ` : ""}${hours % 24 > 0 ? `${hours % 24}시간 ` : ""}${
+    Number(minutes) > 0 || (days === 0 && hours % 24 === 0) ? `${Number(minutes)}분 ` : ""
+  }후`.trim();
 }
 
 function progressBar(percent) {
@@ -123,7 +158,8 @@ export function formatUsageMessage(
   { timeZone = "Asia/Seoul", now = new Date(), language = "ko" } = {},
 ) {
   const selectedLanguage = normalizeLanguage(language);
-  const lines = [translate(selectedLanguage, "usageTitle"), "────────────"];
+  const checkedAt = formatTimestamp(now.getTime() / 1_000, timeZone, selectedLanguage);
+  const lines = [`${translate(selectedLanguage, "usageTitle")}(${checkedAt})`, "────────────"];
 
   if (usage.windows.length === 0) {
     lines.push(translate(selectedLanguage, "noWindows"));
@@ -134,9 +170,14 @@ export function formatUsageMessage(
           ? translate(selectedLanguage, "unknown")
           : `${Math.round(window.remainingPercent)}%`;
       const label = windowLabel(window.durationMinutes, selectedLanguage);
-      lines.push(`${label}  ${progressBar(window.remainingPercent)}  ${remaining}`);
-      lines.push(`↻ ${translate(selectedLanguage, "reset")}: ${formatTimestamp(window.resetsAt, timeZone, selectedLanguage)}`);
-      lines.push("");
+      lines.push(`${label} │ ${progressBar(window.remainingPercent)} │ ${remaining}`);
+      const resetTime = formatTimestamp(window.resetsAt, timeZone, selectedLanguage);
+      const resetRemaining = formatRemaining(window.resetsAt, now, selectedLanguage);
+      lines.push(
+        `↳ ${translate(selectedLanguage, "reset")}: ${resetTime}${
+          resetRemaining ? ` (${resetRemaining})` : ""
+        }`,
+      );
     }
   }
 
@@ -151,30 +192,15 @@ export function formatUsageMessage(
     .filter((credit) => credit.status === "available" && credit.expiresAt)
     .map((credit) => credit.expiresAt);
   if (expirations.length > 0) {
+    const expiry = Math.min(...expirations);
     lines.push(
-      `${translate(selectedLanguage, "nearestExpiry")}: ${formatTimestamp(
-        Math.min(...expirations),
+        `↳ ${translate(selectedLanguage, "expires")}: ${formatTimestamp(
+        expiry,
         timeZone,
         selectedLanguage,
-      )}`,
+      )} (${formatRemaining(expiry, now, selectedLanguage)})`,
     );
   }
-  lines.push("");
-  const locales = { ko: "ko-KR", en: "en-US", zh: "zh-CN", ja: "ja-JP" };
-  lines.push(
-    `🕒 ${translate(selectedLanguage, "checked")}: ${new Intl.DateTimeFormat(
-      locales[selectedLanguage],
-      {
-      timeZone,
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-      },
-    ).format(now)}`,
-  );
-
   return `${lines.join("\n").replace(/\n{3,}/g, "\n\n")}\n────────────\n${translate(
     selectedLanguage,
     "refreshHint",
