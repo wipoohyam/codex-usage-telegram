@@ -8,7 +8,9 @@ Self-hosted Telegram notifications for ChatGPT Codex usage limits and earned res
 
 - Reports remaining usage and reset times for five-hour, weekly, and other returned windows
 - Reports earned reset credits when available
-- Checks every 90 minutes by default
+- Checks every 20 minutes by default
+- Sends automatic reports only when a displayed percentage or reset time changes and at least 60 minutes have passed since the last usage report
+- Ignores five-hour reset-time changes while the displayed five-hour remaining usage is 100%
 - Responds immediately to `/status`
 - Alerts when ChatGPT authentication expires
 - Supports ChatGPT login and reauthentication from a private Telegram chat
@@ -99,11 +101,13 @@ To change the notification language, send `/language` and then use one of `ko`, 
 | --- | --- | --- |
 | `TELEGRAM_BOT_TOKEN` | Required | Telegram bot token |
 | `TELEGRAM_CHAT_ID` | Required | Numeric private-chat ID |
-| `POLL_INTERVAL_MINUTES` | `90` | Usage check interval |
+| `POLL_INTERVAL_MINUTES` | `20` | Usage check interval |
+| `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | Minimum interval between automatic usage reports |
 | `TZ` | `Asia/Seoul` | Time zone used in notifications |
-| `NOTIFY_MODE` | `always` | `always` or `changes` |
 | `REQUEST_TIMEOUT_SECONDS` | `30` | Request timeout |
 | `TELEGRAM_LONG_POLL_SECONDS` | `50` | Telegram command polling duration |
+
+Automatic reports compare the rounded percentages and absolute reset timestamps with the last report that was sent. Changes detected during the minimum interval are held and the latest state is sent on the first eligible poll. A five-hour reset timestamp is excluded from change detection while that window displays 100% remaining. `/status` always responds immediately and resets the minimum interval for subsequent automatic reports.
 
 ## Operation
 

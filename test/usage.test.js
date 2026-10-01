@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatUsageMessage, normalizeUsage } from "../src/usage.js";
+import {
+  formatUsageMessage,
+  normalizeUsage,
+  notificationFingerprint,
+  usageNotificationDecision,
+} from "../src/usage.js";
 
 const response = {
   rateLimits: {
@@ -70,4 +75,87 @@ test("does not report zero reset credits when the service omitted the field", ()
   const usage = normalizeUsage({ rateLimits: response.rateLimits });
   assert.equal(usage.availableResetCount, null);
   assert.match(formatUsageMessage(usage), /리셋 쿠폰: 정보 없음/);
+});
+
+test("uses displayed percentages and reset times for notification changes", () => {
+  const usage = normalizeUsage(response);
+  const fingerprint = notificationFingerprint(usage);
+  const changedReset = normalizeUsage({
+    rateLimits: {
+      ...response.rateLimits,
+      secondary: { ...response.rateLimits.secondary, resetsAt: 1_800_100_100 },
+    },
+  });
+
+  assert.notEqual(notificationFingerprint(changedReset), fingerprint);
+});
+
+test("ignores five-hour reset changes while displayed remaining usage is 100 percent", () => {
+  const first = normalizeUsage({
+    rateLimits: {
+      limitId: "codex",
+      primary: { usedPercent: 0.4, windowDurationMins: 300, resetsAt: 1_800_000_000 },
+    },
+  });
+  const second = normalizeUsage({
+    rateLimits: {
+      limitId: "codex",
+      primary: { usedPercent: 0.1, windowDurationMins: 300, resetsAt: 1_800_000_100 },
+    },
+  });
+
+  assert.equal(notificationFingerprint(first), notificationFingerprint(second));
+});
+
+test("detects five-hour reset changes below displayed 100 percent", () => {
+  const first = normalizeUsage({
+    rateLimits: {
+      limitId: "codex",
+      primary: { usedPercent: 1, windowDurationMins: 300, resetsAt: 1_800_000_000 },
+    },
+  });
+  const second = normalizeUsage({
+    rateLimits: {
+      limitId: "codex",
+      primary: { usedPercent: 1, windowDurationMins: 300, resetsAt: 1_800_000_100 },
+    },
+  });
+
+  assert.notEqual(notificationFingerprint(first), notificationFingerprint(second));
+});
+
+test("waits an hour after the last usage notification and compares with the sent state", () => {
+  const usage = normalizeUsage(response);
+  const unchangedFingerprint = notificationFingerprint(usage);
+  const changedUsage = normalizeUsage({
+    rateLimits: {
+      ...response.rateLimits,
+      primary: { ...response.rateLimits.primary, usedPercent: 30 },
+    },
+  });
+
+  assert.equal(
+    usageNotificationDecision(changedUsage, {
+      lastFingerprint: unchangedFingerprint,
+      lastNotificationAt: "2026-09-21T00:00:00.000Z",
+      now: new Date("2026-09-21T00:40:00.000Z"),
+    }).shouldSend,
+    false,
+  );
+  assert.equal(
+    usageNotificationDecision(changedUsage, {
+      lastFingerprint: unchangedFingerprint,
+      lastNotificationAt: "2026-09-21T00:00:00.000Z",
+      now: new Date("2026-09-21T01:00:00.000Z"),
+    }).shouldSend,
+    true,
+  );
+  assert.equal(
+    usageNotificationDecision(usage, {
+      lastFingerprint: unchangedFingerprint,
+      lastNotificationAt: "2026-09-21T00:00:00.000Z",
+      now: new Date("2026-09-21T02:00:00.000Z"),
+    }).shouldSend,
+    false,
+  );
 });

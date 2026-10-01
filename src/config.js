@@ -20,11 +20,6 @@ export function loadConfig(env = process.env, { requireTelegram = true } = {}) {
     throw new Error("TELEGRAM_CHAT_ID is required");
   }
 
-  const notifyMode = (env.NOTIFY_MODE || "always").trim().toLowerCase();
-  if (!new Set(["always", "changes"]).has(notifyMode)) {
-    throw new Error("NOTIFY_MODE must be either 'always' or 'changes'");
-  }
-
   const timeZone = (env.TZ || "Asia/Seoul").trim();
   try {
     new Intl.DateTimeFormat("en-US", { timeZone }).format(new Date());
@@ -36,7 +31,13 @@ export function loadConfig(env = process.env, { requireTelegram = true } = {}) {
     telegramToken,
     telegramChatId,
     pollIntervalMs:
-      positiveNumber(env.POLL_INTERVAL_MINUTES, 90, "POLL_INTERVAL_MINUTES") * 60_000,
+      positiveNumber(env.POLL_INTERVAL_MINUTES, 20, "POLL_INTERVAL_MINUTES") * 60_000,
+    notificationMinIntervalMs:
+      positiveNumber(
+        env.NOTIFICATION_MIN_INTERVAL_MINUTES,
+        60,
+        "NOTIFICATION_MIN_INTERVAL_MINUTES",
+      ) * 60_000,
     requestTimeoutMs:
       positiveNumber(env.REQUEST_TIMEOUT_SECONDS, 30, "REQUEST_TIMEOUT_SECONDS") * 1_000,
     telegramLongPollSeconds: positiveNumber(
@@ -45,7 +46,6 @@ export function loadConfig(env = process.env, { requireTelegram = true } = {}) {
       "TELEGRAM_LONG_POLL_SECONDS",
     ),
     timeZone,
-    notifyMode,
     codexCommand: (env.CODEX_COMMAND || "codex").trim(),
     stateFile: path.resolve(env.STATE_FILE || "data/state.json"),
   };

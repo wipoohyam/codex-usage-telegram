@@ -4,9 +4,9 @@ import { loadConfig } from "../src/config.js";
 
 test("loads defaults with required Telegram values", () => {
   const config = loadConfig({ TELEGRAM_BOT_TOKEN: "token", TELEGRAM_CHAT_ID: "42" });
-  assert.equal(config.pollIntervalMs, 90 * 60_000);
+  assert.equal(config.pollIntervalMs, 20 * 60_000);
+  assert.equal(config.notificationMinIntervalMs, 60 * 60_000);
   assert.equal(config.timeZone, "Asia/Seoul");
-  assert.equal(config.notifyMode, "always");
   assert.equal(config.telegramLongPollSeconds, 50);
 });
 
@@ -26,6 +26,18 @@ test("rejects invalid polling interval", () => {
         TELEGRAM_BOT_TOKEN: "token",
         TELEGRAM_CHAT_ID: "42",
         POLL_INTERVAL_MINUTES: "zero",
+      }),
+    /positive number/,
+  );
+});
+
+test("rejects invalid notification interval", () => {
+  assert.throws(
+    () =>
+      loadConfig({
+        TELEGRAM_BOT_TOKEN: "token",
+        TELEGRAM_CHAT_ID: "42",
+        NOTIFICATION_MIN_INTERVAL_MINUTES: "zero",
       }),
     /positive number/,
   );

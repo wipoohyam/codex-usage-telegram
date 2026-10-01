@@ -201,16 +201,43 @@ export function formatUsageMessage(
   )}`;
 }
 
-export function usageFingerprint(usage) {
+export function notificationFingerprint(usage) {
   return JSON.stringify({
-    windows: usage.windows.map((window) => ({
-      bucketId: window.bucketId,
-      kind: window.kind,
-      durationMinutes: window.durationMinutes,
-      usedPercent: window.usedPercent,
-      resetsAt: window.resetsAt,
-    })),
-    availableResetCount: usage.availableResetCount,
-    credits: usage.credits,
+    windows: usage.windows.map((window) => {
+      const remainingPercent =
+        window.remainingPercent === null ? null : Math.round(window.remainingPercent);
+      const ignoreFiveHourReset =
+        window.durationMinutes === 300 && remainingPercent === 100;
+
+      return {
+        bucketId: window.bucketId,
+        kind: window.kind,
+        durationMinutes: window.durationMinutes,
+        remainingPercent,
+        resetsAt: ignoreFiveHourReset ? null : window.resetsAt,
+      };
+    }),
   });
+}
+
+export function usageNotificationDecision(
+  usage,
+  {
+    lastFingerprint = null,
+    lastNotificationAt = null,
+    minIntervalMs = 60 * 60_000,
+    forceSend = false,
+    now = new Date(),
+  } = {},
+) {
+  const fingerprint = notificationFingerprint(usage);
+  if (forceSend) return { shouldSend: true, fingerprint };
+
+  const changed = lastFingerprint !== fingerprint;
+  const lastNotificationTime = Date.parse(lastNotificationAt);
+  const intervalElapsed =
+    !Number.isFinite(lastNotificationTime) ||
+    now.getTime() - lastNotificationTime >= minIntervalMs;
+
+  return { shouldSend: changed && intervalElapsed, fingerprint };
 }

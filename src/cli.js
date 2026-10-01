@@ -16,7 +16,11 @@ import {
   getTelegramUpdates,
   sendTelegramMessage,
 } from "./telegram.js";
-import { formatUsageMessage, normalizeUsage, usageFingerprint } from "./usage.js";
+import {
+  formatUsageMessage,
+  normalizeUsage,
+  usageNotificationDecision,
+} from "./usage.js";
 
 const command = process.argv[2] || "monitor";
 const LOGIN_CONFIRM_WINDOW_MS = 60_000;
@@ -46,10 +50,15 @@ async function poll(config, { forceSend = false } = {}) {
     timeoutMs: config.requestTimeoutMs,
   });
   const usage = normalizeUsage(limits);
-  const fingerprint = usageFingerprint(usage);
   const state = await loadState(config.stateFile);
-  const shouldSend =
-    forceSend || config.notifyMode === "always" || state.lastFingerprint !== fingerprint;
+  const now = new Date();
+  const { shouldSend, fingerprint } = usageNotificationDecision(usage, {
+    lastFingerprint: state.lastNotificationFingerprint,
+    lastNotificationAt: state.lastNotificationAt,
+    minIntervalMs: config.notificationMinIntervalMs,
+    forceSend,
+    now,
+  });
 
   if (shouldSend) {
     await sendTelegramMessage({
@@ -58,6 +67,7 @@ async function poll(config, { forceSend = false } = {}) {
       text: formatUsageMessage(usage, {
         timeZone: config.timeZone,
         language: normalizeLanguage(state.language),
+        now,
       }),
       timeoutMs: config.requestTimeoutMs,
     });
@@ -66,8 +76,13 @@ async function poll(config, { forceSend = false } = {}) {
   const latestState = await loadState(config.stateFile);
   await saveState(config.stateFile, {
     ...latestState,
-    lastFingerprint: fingerprint,
-    lastSuccessAt: new Date().toISOString(),
+    ...(shouldSend
+      ? {
+          lastNotificationFingerprint: fingerprint,
+          lastNotificationAt: now.toISOString(),
+        }
+      : {}),
+    lastSuccessAt: now.toISOString(),
     lastPlanType: account.planType ?? null,
     lastError: null,
   });
