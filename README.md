@@ -2,7 +2,9 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-![Codex usage notifications in Telegram](alarm_message.jpg)
+<p align="center">
+  <img src="alarm_message.jpg" alt="Codex usage notifications in Telegram" width="500">
+</p>
 
 Check your ChatGPT Codex usage limits, reset times, and reset credits from Telegram. The bot watches for meaningful changes and avoids repeating the same report. No OpenAI API key is required.
 

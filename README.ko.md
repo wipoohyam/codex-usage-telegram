@@ -2,7 +2,9 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-![텔레그램으로 받는 Codex 사용량 알림](alarm_message.jpg)
+<p align="center">
+  <img src="alarm_message.jpg" alt="텔레그램으로 받는 Codex 사용량 알림" width="500">
+</p>
 
 ChatGPT Codex의 잔여 사용량, 초기화 시각, 리셋 쿠폰을 텔레그램에서 확인할 수 있습니다. 의미 있는 변화가 있을 때만 알려주므로 같은 내용의 알림이 반복되지 않습니다. OpenAI API 키는 필요하지 않습니다.
 
