@@ -2,26 +2,34 @@
 
 [English](README.md) | [한국어](README.ko.md)
 
-Self-hosted Telegram notifications for ChatGPT Codex usage limits and earned reset credits. It does not run model turns or require an OpenAI API key.
+![Codex usage notifications in Telegram](alarm_message.jpg)
 
-## Features
+Check your ChatGPT Codex usage limits, reset times, and reset credits from Telegram. The bot watches for meaningful changes and avoids repeating the same report. No OpenAI API key is required.
 
-- Reports remaining usage and reset times for five-hour, weekly, and other returned windows
-- Reports earned reset credits when available
-- Checks every 20 minutes by default
-- Sends automatic reports only when a displayed percentage or reset time changes and at least 60 minutes have passed since the last usage report
-- Ignores five-hour reset-time changes while the displayed five-hour remaining usage is 100%
-- Responds immediately to `/status`
-- Alerts when ChatGPT authentication expires
-- Supports ChatGPT login and reauthentication from a private Telegram chat
-- Supports Korean, English, Chinese, and Japanese notifications
-- Requires no public port, webhook, domain, or web server
+## What you get
 
-## Install with Docker Compose
+- Remaining usage for the five-hour, weekly, and any other limits returned by Codex
+- Exact reset time and a friendly countdown
+- Reset-credit balance and expiry, when available
+- Automatic notifications in Korean, English, Chinese, or Japanese
+- Instant checks with `/status`
+- A warning when your ChatGPT login expires
 
-Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://t.me/BotFather).
+The bot checks every 20 minutes. An automatic report is sent only when a displayed percentage or reset time has changed and at least 60 minutes have passed since the previous usage report. If several changes happen during that hour, only the latest result is sent. Because the five-hour reset time can move while the remaining amount is 100%, that reset-time change is ignored until the displayed amount drops below 100%.
 
-1. Download the configuration:
+## Before you start
+
+You need:
+
+- A machine or server with Docker Compose
+- A Telegram bot token from [@BotFather](https://t.me/BotFather)
+- A ChatGPT account with Codex access
+
+Use a private Telegram chat with the bot. Do not add this bot to a group that other people can access.
+
+## Install
+
+1. Download the project and create your settings file.
 
    ```sh
    git clone https://github.com/wipoohyam/codex-usage-telegram.git
@@ -29,119 +37,101 @@ Requirements: Docker Compose and a Telegram bot token from [@BotFather](https://
    cp .env.example .env
    ```
 
-2. Set your Telegram values in `.env`:
+2. Send any message to your new Telegram bot. Then open the following address in a browser, replacing `<YOUR_TOKEN>` with the token from BotFather:
+
+   ```text
+   https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
+   ```
+
+   Find `message.chat.id` in the response. This number is your private chat ID.
+
+3. Open `.env` and enter the bot token and chat ID.
 
    ```env
    TELEGRAM_BOT_TOKEN=your_bot_token
    TELEGRAM_CHAT_ID=your_numeric_chat_id
    ```
 
-   To find the chat ID, send the bot a message and open:
+   Keep this file private because it contains your bot token.
 
-   ```text
-   https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
-   ```
+4. In ChatGPT, open **Settings → Security** and enable **Codex device code authentication**.
 
-   Use the numeric `message.chat.id`, not the bot username. Never publish or share `.env`.
-
-3. In ChatGPT, open **Settings → Security** and enable **Codex device code authentication**.
-
-4. Pull the image and start the service:
+5. Download the current image and start the bot.
 
    ```sh
    docker compose pull
    docker compose up -d
    ```
 
-5. Sign in to ChatGPT using either method below.
+6. Sign in to ChatGPT. Logging in directly on the server is the safer option:
 
-### Option A: Login from Telegram
+   ```sh
+   docker compose run --rm codex-usage login
+   ```
 
-In the configured private Telegram chat, send:
+   You can instead send `/login` to the bot in your private chat and then send `/login_confirm` within 60 seconds. Open the verification link and enter the one-time code. The login messages are automatically deleted after completion, failure, or approximately ten minutes.
 
-```text
-/login
-```
-
-The bot will show a security warning. To continue, send this within 60 seconds:
-
-```text
-/login_confirm
-```
-
-The verification URL and one-time code will arrive as separate messages. Tap the spoiler to reveal the code, open the URL, and complete the ChatGPT login.
-
-Login messages are deleted after completion, failure, or approximately ten minutes.
-
-### Option B: Login on the server
-
-For the safer server-side login method, run:
-
-```sh
-docker compose run --rm codex-usage login
-```
-
-6. Send `/status` to the bot to verify the setup.
+7. Send `/status` to the bot. You should receive your current Codex limits immediately.
 
 ## Telegram commands
 
-- `/status` — check usage now
-- `/login` — start ChatGPT login or reauthentication and show the security warning
-- `/login_confirm` — confirm and continue the login within 60 seconds
-- `/language` — choose Korean, English, Chinese, or Japanese (for example, `/language en`)
-- `/help` — show available commands
+| Command | What it does |
+| --- | --- |
+| `/status` | Shows the current usage immediately |
+| `/login` | Starts ChatGPT login or reauthentication |
+| `/login_confirm` | Confirms a Telegram login request within 60 seconds |
+| `/language` | Selects Korean, English, Chinese, or Japanese |
+| `/help` | Shows the available commands |
 
-During Telegram login, the verification instructions and one-time code arrive as separate messages. Tap the spoiler to reveal the code, then copy it. Login messages are deleted after completion, failure, or approximately ten minutes.
+For example, send `/language en` to switch notifications to English. A manual `/status` report also restarts the 60-minute interval before the next automatic report.
 
-To change the notification language, send `/language` and then use one of `ko`, `en`, `zh`, or `ja`. The selection is saved in the service state volume.
+## Settings you may want to change
 
-## Configuration
+Edit `.env`, then run `docker compose up -d --force-recreate` to apply changes.
 
-| Variable | Default | Description |
+| Variable | Default | Purpose |
 | --- | --- | --- |
-| `TELEGRAM_BOT_TOKEN` | Required | Telegram bot token |
-| `TELEGRAM_CHAT_ID` | Required | Numeric private-chat ID |
-| `POLL_INTERVAL_MINUTES` | `20` | Usage check interval |
-| `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | Minimum interval between automatic usage reports |
-| `TZ` | `Asia/Seoul` | Time zone used in notifications |
-| `REQUEST_TIMEOUT_SECONDS` | `30` | Request timeout |
-| `TELEGRAM_LONG_POLL_SECONDS` | `50` | Telegram command polling duration |
+| `POLL_INTERVAL_MINUTES` | `20` | How often to check Codex usage |
+| `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | Minimum time between automatic reports |
+| `TZ` | `Asia/Seoul` | Time zone shown in notifications |
 
-Automatic reports compare the rounded percentages and absolute reset timestamps with the last report that was sent. Changes detected during the minimum interval are held and the latest state is sent on the first eligible poll. A five-hour reset timestamp is excluded from change detection while that window displays 100% remaining. `/status` always responds immediately and resets the minimum interval for subsequent automatic reports.
+## Update
 
-## Operation
-
-Update to the newest image:
+Run these commands from the project directory:
 
 ```sh
+git pull
 docker compose pull
 docker compose up -d --force-recreate
 ```
 
-Check status and logs:
+Your ChatGPT login and bot state are kept when the container is updated.
 
-```sh
-docker compose ps
-docker compose logs --tail=100 codex-usage
-```
+## If something is not working
 
-Stop and remove the container while keeping login data:
+- **No reply to `/status`:** Check that `TELEGRAM_CHAT_ID` is the numeric ID of the private chat where you sent the command. Then run `docker compose logs --tail=100 codex-usage`.
+- **Login expired:** Send `/login` and `/login_confirm` again, or run `docker compose run --rm codex-usage login` on the server.
+- **A check times out once:** Wait for the next check or try `/status` again. A single timeout is usually temporary.
+- **Settings changed but behavior did not:** Recreate the container with `docker compose up -d --force-recreate`.
+
+## Stop or remove
+
+Stop the bot while keeping your login and settings:
 
 ```sh
 docker compose down
 ```
 
-Do not use `docker compose down -v` unless you intend to delete the stored ChatGPT login and application state.
+Do not add `-v` unless you intentionally want to delete the saved ChatGPT login and notification state.
 
-## Security
+## Security notes
 
-- ChatGPT credentials remain in the private `codex-auth` Docker volume.
-- The Telegram bot token remains in your local `.env` file.
-- Only the configured private `TELEGRAM_CHAT_ID` can issue commands.
-- A Telegram device code can be copied, forwarded, or captured before automatic deletion. Do not share it.
+- Never share or commit `.env`.
+- Use the bot only in the configured private chat.
+- Treat the device-login code like a password until it expires.
 - Prefer server-side login when possible.
 
-See the official [Codex authentication documentation](https://developers.openai.com/codex/auth).
+See the official [Codex authentication documentation](https://developers.openai.com/codex/auth) for more information.
 
 ## License
 
