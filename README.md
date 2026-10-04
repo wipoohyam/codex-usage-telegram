@@ -80,12 +80,15 @@ Use a private Telegram chat with the bot. Do not add this bot to a group that ot
 | Command | What it does |
 | --- | --- |
 | `/status` | Shows the current usage immediately |
+| `/prime-on` | Enables five-hour prime (sends a 1+1 request) |
+| `/prime-off` | Disables five-hour prime |
+| `/prime-status` | Shows the current five-hour prime status |
 | `/login` | Starts ChatGPT login or reauthentication |
 | `/login_confirm` | Confirms a Telegram login request within 60 seconds |
 | `/language` | Selects Korean, English, Chinese, or Japanese |
 | `/help` | Shows the available commands |
 
-For example, send `/language en` to switch notifications to English. A manual `/status` report also restarts the 60-minute interval before the next automatic report.
+For example, send `/language en` to switch notifications to English. A manual `/status` report also restarts the 60-minute interval before the next automatic report. The bot sends a Telegram notification every time it actually runs the prime prompt.
 
 ## Settings you may want to change
 
@@ -109,6 +112,8 @@ FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
 ```
 
 This feature is disabled by default and consumes a small amount of Codex usage. Once the remaining amount changes to `99.xx%`, it does not run again. If ChatGPT resets both limits to exactly 100%, it runs once for the new cycle. The cooldown only prevents duplicate calls while the API is still reflecting the request.
+
+While the bot is running, you can also use `/prime-on` or `/prime-off` to change the setting immediately. Telegram changes are saved in `data/state.json`, survive restarts, and take precedence over `PRIME_FULL_USAGE`. Use `/prime-status` to inspect the current setting.
 
 ## Update
 

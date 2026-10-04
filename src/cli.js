@@ -8,6 +8,7 @@ import {
   reauthenticationMessage,
 } from "./auth.js";
 import { loadConfig } from "./config.js";
+import { parsePrimeCommand } from "./commands.js";
 import {
   CodexAppServerClient,
   primeCodexUsage,
@@ -57,9 +58,10 @@ async function poll(config, { forceSend = false } = {}) {
   let usage = normalizeUsage(limits);
   let state = await loadState(config.stateFile);
   const now = new Date();
+  const primeEnabled = primeSettingStatus(config, state).enabled;
 
   if (
-    config.primeFullUsage &&
+    primeEnabled &&
     shouldPrimeFullUsage(usage, {
       lastPrimeAt: state.lastFullUsagePrimeAt,
       minIntervalMs: config.fullUsagePrimeCooldownMs,
@@ -72,6 +74,8 @@ async function poll(config, { forceSend = false } = {}) {
       lastFullUsagePrimeError: null,
     };
     await saveState(config.stateFile, state);
+    await sendMessage(config, translate(normalizeLanguage(state.language), "primeStarted"))
+      .catch((error) => console.error(`Prime notification failed: ${error.message}`));
     try {
       await primeCodexUsage({ command: config.codexCommand });
       ({ account, limits } = await readCodexStatus({
@@ -85,6 +89,10 @@ async function poll(config, { forceSend = false } = {}) {
       state = { ...state, lastFullUsagePrimeError: message };
       await saveState(config.stateFile, state);
       console.error(message);
+      await sendMessage(
+        config,
+        translate(normalizeLanguage(state.language), "primeFailed", { detail: message }),
+      ).catch((telegramError) => console.error(`Prime failure notification failed: ${telegramError.message}`));
     }
   }
 
@@ -151,6 +159,14 @@ function isStatusCommand(text = "") {
 
 function isHelpCommand(text = "") {
   return /^\/(?:start|help)(?:@\w+)?(?:\s|$)/i.test(text.trim());
+}
+
+function primeSettingStatus(config, state) {
+  const hasOverride = typeof state.primeFullUsageEnabled === "boolean";
+  return {
+    enabled: hasOverride ? state.primeFullUsageEnabled : config.primeFullUsage,
+    source: hasOverride ? "telegram" : "env",
+  };
 }
 
 async function sendMessage(config, text, options = {}) {
@@ -279,6 +295,7 @@ async function telegramCommandLoop(config, checkUsage) {
         const language = normalizeLanguage(state.language);
         const languageCommand = parseLanguageCommand(message?.text);
         const loginCommand = parseLoginCommand(message?.text);
+        const primeCommand = parsePrimeCommand(message?.text);
 
         if (languageCommand) {
           if (!languageCommand.valid) {
@@ -300,6 +317,23 @@ async function telegramCommandLoop(config, checkUsage) {
               isAuthenticationError(error)
                 ? reauthenticationMessage(detail, language)
                 : translate(language, "statusFailure", { detail }),
+            );
+          }
+        } else if (primeCommand) {
+          if (primeCommand === "on" || primeCommand === "off") {
+            const enabled = primeCommand === "on";
+            await saveState(config.stateFile, {
+              ...state,
+              primeFullUsageEnabled: enabled,
+            });
+            await sendMessage(
+              config,
+              translate(language, enabled ? "primeEnabled" : "primeDisabled"),
+            );
+          } else {
+            await sendMessage(
+              config,
+              translate(language, "primeStatus", primeSettingStatus(config, state)),
             );
           }
         } else if (loginCommand) {

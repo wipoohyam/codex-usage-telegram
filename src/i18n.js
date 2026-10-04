@@ -42,7 +42,13 @@ const messages = {
     loginSuccess: "✅ ChatGPT 로그인이 완료되었습니다. 사용량을 다시 확인합니다.",
     loginUsageFailure: ({ detail }) => `⚠️ 로그인은 완료됐지만 사용량 조회에 실패했습니다.\n\n${detail}`,
     loginFailure: ({ detail }) => `❌ ChatGPT 로그인 실패\n\n${detail}`,
-    help: "Codex 사용량 알림 봇입니다.\n\n/status - 지금 사용량 조회\n/login - ChatGPT 재로그인 시작(보안 경고 및 확인 필요)\n/login_confirm - 보안 경고 확인 후 로그인 계속\n/language - 알림 언어 변경\n/help - 사용 가능한 명령어 보기",
+    primeStarted: "⚡ 5시간 prime 실행: Codex에 1+1 요청을 보냅니다.",
+    primeFailed: ({ detail }) => `⚠️ 5시간 prime 실행 실패\n\n${detail}`,
+    primeEnabled: "✅ 5시간 prime(1+1 전송)을 켰습니다.",
+    primeDisabled: "⏸ 5시간 prime(1+1 전송)을 껐습니다.",
+    primeStatus: ({ enabled, source }) =>
+      `⚙️ 5시간 prime: ${enabled ? "켜짐" : "꺼짐"}\n설정 출처: ${source === "env" ? "환경변수" : "Telegram 명령"}\n\n변경: /prime-on 또는 /prime-off`,
+    help: "Codex 사용량 알림 봇입니다.\n\n/status - 지금 사용량 조회\n/prime-on - 5시간 prime(1+1 전송) 켜기\n/prime-off - 5시간 prime(1+1 전송) 끄기\n/prime-status - 5시간 prime 상태 확인\n/login - ChatGPT 재로그인 시작(보안 경고 및 확인 필요)\n/login_confirm - 보안 경고 확인 후 로그인 계속\n/language - 알림 언어 변경\n/help - 사용 가능한 명령어 보기",
   },
   en: {
     languageMenu: ({ current }) =>
@@ -78,7 +84,13 @@ const messages = {
     loginSuccess: "✅ ChatGPT login completed. Checking usage again.",
     loginUsageFailure: ({ detail }) => `⚠️ Login completed, but the usage check failed.\n\n${detail}`,
     loginFailure: ({ detail }) => `❌ ChatGPT login failed\n\n${detail}`,
-    help: "Codex usage alert bot.\n\n/status - Check usage now\n/login - Start ChatGPT reauthentication\n/login_confirm - Confirm and continue login\n/language - Change notification language\n/help - Show available commands",
+    primeStarted: "⚡ Five-hour prime started: sending a 1+1 request to Codex.",
+    primeFailed: ({ detail }) => `⚠️ Five-hour prime failed\n\n${detail}`,
+    primeEnabled: "✅ Five-hour prime (1+1 request) is now enabled.",
+    primeDisabled: "⏸ Five-hour prime (1+1 request) is now disabled.",
+    primeStatus: ({ enabled, source }) =>
+      `⚙️ Five-hour prime: ${enabled ? "ON" : "OFF"}\nSetting source: ${source === "env" ? "environment" : "Telegram command"}\n\nChange it with /prime-on or /prime-off`,
+    help: "Codex usage alert bot.\n\n/status - Check usage now\n/prime-on - Enable five-hour prime (1+1 request)\n/prime-off - Disable five-hour prime\n/prime-status - Show five-hour prime status\n/login - Start ChatGPT reauthentication\n/login_confirm - Confirm and continue login\n/language - Change notification language\n/help - Show available commands",
   },
   zh: {
     languageMenu: ({ current }) =>
@@ -114,7 +126,13 @@ const messages = {
     loginSuccess: "✅ ChatGPT 登录完成。正在重新查询用量。",
     loginUsageFailure: ({ detail }) => `⚠️ 登录完成，但用量查询失败。\n\n${detail}`,
     loginFailure: ({ detail }) => `❌ ChatGPT 登录失败\n\n${detail}`,
-    help: "Codex 用量提醒机器人。\n\n/status - 立即查询用量\n/login - 开始 ChatGPT 重新登录\n/login_confirm - 确认并继续登录\n/language - 更改通知语言\n/help - 显示可用命令",
+    primeStarted: "⚡ 五小时 prime 已执行：正在向 Codex 发送 1+1 请求。",
+    primeFailed: ({ detail }) => `⚠️ 五小时 prime 执行失败\n\n${detail}`,
+    primeEnabled: "✅ 已开启五小时 prime（发送 1+1 请求）。",
+    primeDisabled: "⏸ 已关闭五小时 prime（发送 1+1 请求）。",
+    primeStatus: ({ enabled, source }) =>
+      `⚙️ 五小时 prime：${enabled ? "开启" : "关闭"}\n设置来源：${source === "env" ? "环境变量" : "Telegram 命令"}\n\n使用 /prime-on 或 /prime-off 修改`,
+    help: "Codex 用量提醒机器人。\n\n/status - 立即查询用量\n/prime-on - 开启五小时 prime（发送 1+1 请求）\n/prime-off - 关闭五小时 prime\n/prime-status - 查看五小时 prime 状态\n/login - 开始 ChatGPT 重新登录\n/login_confirm - 确认并继续登录\n/language - 更改通知语言\n/help - 显示可用命令",
   },
   ja: {
     languageMenu: ({ current }) =>
@@ -150,7 +168,13 @@ const messages = {
     loginSuccess: "✅ ChatGPT のログインが完了しました。使用量を再確認します。",
     loginUsageFailure: ({ detail }) => `⚠️ ログインは完了しましたが、使用量の確認に失敗しました。\n\n${detail}`,
     loginFailure: ({ detail }) => `❌ ChatGPT のログインに失敗しました\n\n${detail}`,
-    help: "Codex 使用量通知ボットです。\n\n/status - 使用量を今すぐ確認\n/login - ChatGPT 再ログインを開始\n/login_confirm - 確認してログインを続行\n/language - 通知言語を変更\n/help - 利用可能なコマンドを表示",
+    primeStarted: "⚡ 5時間 prime を実行：Codex に 1+1 リクエストを送信します。",
+    primeFailed: ({ detail }) => `⚠️ 5時間 prime に失敗しました\n\n${detail}`,
+    primeEnabled: "✅ 5時間 prime（1+1 リクエスト）をオンにしました。",
+    primeDisabled: "⏸ 5時間 prime（1+1 リクエスト）をオフにしました。",
+    primeStatus: ({ enabled, source }) =>
+      `⚙️ 5時間 prime：${enabled ? "オン" : "オフ"}\n設定元：${source === "env" ? "環境変数" : "Telegram コマンド"}\n\n/prime-on または /prime-off で変更できます`,
+    help: "Codex 使用量通知ボットです。\n\n/status - 使用量を今すぐ確認\n/prime-on - 5時間 prime（1+1 リクエスト）をオン\n/prime-off - 5時間 prime をオフ\n/prime-status - 5時間 prime の状態を確認\n/login - ChatGPT 再ログインを開始\n/login_confirm - 確認してログインを続行\n/language - 通知言語を変更\n/help - 利用可能なコマンドを表示",
   },
 };
 
