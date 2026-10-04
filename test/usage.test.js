@@ -4,7 +4,7 @@ import {
   formatUsageMessage,
   normalizeUsage,
   notificationFingerprint,
-  shouldPrimeFullUsage,
+  shouldPrimeFiveHourUsage,
   usageNotificationDecision,
 } from "../src/usage.js";
 
@@ -179,36 +179,29 @@ test("waits an hour after the last usage notification and compares with the sent
   );
 });
 
-test("primes only when both core windows display 100 percent and the cooldown elapsed", () => {
-  const fullUsage = normalizeUsage({
+test("primes whenever the five-hour window displays 100 percent", () => {
+  const fullFiveHourUsage = normalizeUsage({
     rateLimits: {
       limitId: "codex",
       primary: { usedPercent: 0, windowDurationMins: 300, resetsAt: 1_800_000_000 },
-      secondary: { usedPercent: 0, windowDurationMins: 10_080, resetsAt: 1_800_100_000 },
     },
   });
-  const partlyUsed = normalizeUsage({
+  const usedFiveHourUsage = normalizeUsage({
     rateLimits: {
       limitId: "codex",
       primary: { usedPercent: 1, windowDurationMins: 300, resetsAt: 1_800_000_000 },
       secondary: { usedPercent: 0, windowDurationMins: 10_080, resetsAt: 1_800_100_000 },
     },
   });
+  const fullFiveHourButUsedWeekly = normalizeUsage({
+    rateLimits: {
+      limitId: "codex",
+      primary: { usedPercent: 0, windowDurationMins: 300, resetsAt: 1_800_000_000 },
+      secondary: { usedPercent: 1, windowDurationMins: 10_080, resetsAt: 1_800_100_000 },
+    },
+  });
 
-  assert.equal(shouldPrimeFullUsage(fullUsage), true);
-  assert.equal(shouldPrimeFullUsage(partlyUsed), false);
-  assert.equal(
-    shouldPrimeFullUsage(fullUsage, {
-      lastPrimeAt: "2026-10-04T00:00:00.000Z",
-      now: new Date("2026-10-04T00:10:00.000Z"),
-    }),
-    false,
-  );
-  assert.equal(
-    shouldPrimeFullUsage(fullUsage, {
-      lastPrimeAt: "2026-10-04T00:00:00.000Z",
-      now: new Date("2026-10-04T00:20:00.000Z"),
-    }),
-    true,
-  );
+  assert.equal(shouldPrimeFiveHourUsage(fullFiveHourUsage), true);
+  assert.equal(shouldPrimeFiveHourUsage(usedFiveHourUsage), false);
+  assert.equal(shouldPrimeFiveHourUsage(fullFiveHourButUsedWeekly), true);
 });

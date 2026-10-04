@@ -98,20 +98,18 @@ Edit `.env`, then run `docker compose up -d --force-recreate` to apply changes.
 | --- | --- | --- |
 | `POLL_INTERVAL_MINUTES` | `20` | How often to check Codex usage |
 | `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | Minimum time between automatic reports |
-| `PRIME_FULL_USAGE` | `false` | Whether to send `1+1=?` once when both the five-hour and weekly limits are exactly 100% |
-| `FULL_USAGE_PRIME_COOLDOWN_MINUTES` | `20` | Minimum delay that prevents repeated `1+1=?` calls while the API catches up |
+| `PRIME_FULL_USAGE` | `false` | Whether to send `1+1=?` when the five-hour limit is exactly 100% |
 | `TZ` | `Asia/Seoul` | Time zone shown in notifications |
 
 ### Initialize reset times at 100% (optional)
 
-For some accounts, the unused weekly reset time can move on every check. Enable the following option to send one `1+1=?` prompt to Codex when both the five-hour and weekly limits are exactly 100% based on their raw values. The bot then checks the limits again immediately.
+For some accounts, the unused five-hour reset time can move on every check. Enable the following option to send a `1+1=?` prompt to Codex when the five-hour limit is exactly 100% based on its raw value. The bot then checks the limits again immediately.
 
 ```env
 PRIME_FULL_USAGE=true
-FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
 ```
 
-This feature is disabled by default and consumes a small amount of Codex usage. Once the remaining amount changes to `99.xx%`, it does not run again. If ChatGPT resets both limits to exactly 100%, it runs once for the new cycle. The cooldown only prevents duplicate calls while the API is still reflecting the request.
+This feature is disabled by default and consumes a small amount of Codex usage. When enabled, it runs every time the five-hour remaining amount is reported as exactly `100.00%`. If the API still reports 100% after the request, it can run again on the next usage check.
 
 While the bot is running, you can also use `/prime-on` or `/prime-off` to change the setting immediately. Telegram changes are saved in `data/state.json`, survive restarts, and take precedence over `PRIME_FULL_USAGE`. Use `/prime-status` to inspect the current setting.
 

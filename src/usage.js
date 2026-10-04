@@ -226,29 +226,12 @@ export function notificationFingerprint(usage) {
   });
 }
 
-export function shouldPrimeFullUsage(
-  usage,
-  {
-    lastPrimeAt = null,
-    minIntervalMs = 20 * 60_000,
-    now = new Date(),
-  } = {},
-) {
-  const hasFullFiveHourWindow = usage.windows.some(
+export function shouldPrimeFiveHourUsage(usage) {
+  return usage.windows.some(
     (window) =>
       window.durationMinutes === 300 &&
       window.remainingPercent === 100,
   );
-  const hasFullWeeklyWindow = usage.windows.some(
-    (window) =>
-      window.durationMinutes === 10_080 &&
-      window.remainingPercent === 100,
-  );
-  const lastPrimeTime = Date.parse(lastPrimeAt);
-  const intervalElapsed =
-    !Number.isFinite(lastPrimeTime) || now.getTime() - lastPrimeTime >= minIntervalMs;
-
-  return hasFullFiveHourWindow && hasFullWeeklyWindow && intervalElapsed;
 }
 
 export function usageNotificationDecision(

@@ -7,20 +7,17 @@ test("loads defaults with required Telegram values", () => {
   assert.equal(config.pollIntervalMs, 20 * 60_000);
   assert.equal(config.notificationMinIntervalMs, 60 * 60_000);
   assert.equal(config.primeFullUsage, false);
-  assert.equal(config.fullUsagePrimeCooldownMs, 20 * 60_000);
   assert.equal(config.timeZone, "Asia/Seoul");
   assert.equal(config.telegramLongPollSeconds, 50);
 });
 
-test("enables optional full-usage priming with a minute cooldown", () => {
+test("enables optional five-hour priming", () => {
   const config = loadConfig({
     TELEGRAM_BOT_TOKEN: "token",
     TELEGRAM_CHAT_ID: "42",
     PRIME_FULL_USAGE: "true",
-    FULL_USAGE_PRIME_COOLDOWN_MINUTES: "15",
   });
   assert.equal(config.primeFullUsage, true);
-  assert.equal(config.fullUsagePrimeCooldownMs, 15 * 60_000);
 });
 
 test("rejects missing Telegram values", () => {

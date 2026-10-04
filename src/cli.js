@@ -24,7 +24,7 @@ import {
 import {
   formatUsageMessage,
   normalizeUsage,
-  shouldPrimeFullUsage,
+  shouldPrimeFiveHourUsage,
   usageNotificationDecision,
 } from "./usage.js";
 
@@ -62,15 +62,10 @@ async function poll(config, { forceSend = false } = {}) {
 
   if (
     primeEnabled &&
-    shouldPrimeFullUsage(usage, {
-      lastPrimeAt: state.lastFullUsagePrimeAt,
-      minIntervalMs: config.fullUsagePrimeCooldownMs,
-      now,
-    })
+    shouldPrimeFiveHourUsage(usage)
   ) {
     state = {
       ...state,
-      lastFullUsagePrimeAt: now.toISOString(),
       lastFullUsagePrimeError: null,
     };
     await saveState(config.stateFile, state);
