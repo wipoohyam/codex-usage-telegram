@@ -9,6 +9,14 @@ function positiveNumber(value, fallback, name) {
   return parsed;
 }
 
+function booleanValue(value, fallback, name) {
+  if (value === undefined || value === "") return fallback;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  throw new Error(`${name} must be either 'true' or 'false'`);
+}
+
 export function loadConfig(env = process.env, { requireTelegram = true } = {}) {
   const telegramToken = env.TELEGRAM_BOT_TOKEN?.trim();
   const telegramChatId = env.TELEGRAM_CHAT_ID?.trim();
@@ -37,6 +45,17 @@ export function loadConfig(env = process.env, { requireTelegram = true } = {}) {
         env.NOTIFICATION_MIN_INTERVAL_MINUTES,
         60,
         "NOTIFICATION_MIN_INTERVAL_MINUTES",
+      ) * 60_000,
+    primeFullUsage: booleanValue(
+      env.PRIME_FULL_USAGE,
+      false,
+      "PRIME_FULL_USAGE",
+    ),
+    fullUsagePrimeCooldownMs:
+      positiveNumber(
+        env.FULL_USAGE_PRIME_COOLDOWN_MINUTES,
+        20,
+        "FULL_USAGE_PRIME_COOLDOWN_MINUTES",
       ) * 60_000,
     requestTimeoutMs:
       positiveNumber(env.REQUEST_TIMEOUT_SECONDS, 30, "REQUEST_TIMEOUT_SECONDS") * 1_000,

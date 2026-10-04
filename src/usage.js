@@ -5,6 +5,10 @@ function asFiniteNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+function roundedRemainingPercent(value) {
+  return Math.round(value * 100) / 100;
+}
+
 function windowLabel(minutes, language) {
   const languageCode = normalizeLanguage(language);
   if (languageCode === "en") {
@@ -162,7 +166,7 @@ export function formatUsageMessage(
       const remaining =
         window.remainingPercent === null
           ? translate(selectedLanguage, "unknown")
-          : `${Math.round(window.remainingPercent)}%`;
+          : `${roundedRemainingPercent(window.remainingPercent).toFixed(2)}%`;
       const label = windowLabel(window.durationMinutes, selectedLanguage);
       lines.push(`${label} │ ${remaining}`);
       const resetTime = formatTimestamp(window.resetsAt, timeZone, selectedLanguage);
@@ -205,7 +209,9 @@ export function notificationFingerprint(usage) {
   return JSON.stringify({
     windows: usage.windows.map((window) => {
       const remainingPercent =
-        window.remainingPercent === null ? null : Math.round(window.remainingPercent);
+        window.remainingPercent === null
+          ? null
+          : roundedRemainingPercent(window.remainingPercent);
       const ignoreFiveHourReset =
         window.durationMinutes === 300 && remainingPercent === 100;
 
@@ -218,6 +224,31 @@ export function notificationFingerprint(usage) {
       };
     }),
   });
+}
+
+export function shouldPrimeFullUsage(
+  usage,
+  {
+    lastPrimeAt = null,
+    minIntervalMs = 20 * 60_000,
+    now = new Date(),
+  } = {},
+) {
+  const hasFullFiveHourWindow = usage.windows.some(
+    (window) =>
+      window.durationMinutes === 300 &&
+      window.remainingPercent === 100,
+  );
+  const hasFullWeeklyWindow = usage.windows.some(
+    (window) =>
+      window.durationMinutes === 10_080 &&
+      window.remainingPercent === 100,
+  );
+  const lastPrimeTime = Date.parse(lastPrimeAt);
+  const intervalElapsed =
+    !Number.isFinite(lastPrimeTime) || now.getTime() - lastPrimeTime >= minIntervalMs;
+
+  return hasFullFiveHourWindow && hasFullWeeklyWindow && intervalElapsed;
 }
 
 export function usageNotificationDecision(

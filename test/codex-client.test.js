@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { EventEmitter } from "node:events";
 import { PassThrough } from "node:stream";
-import { CodexAppServerClient } from "../src/codex-client.js";
+import { CodexAppServerClient, primeCodexUsage } from "../src/codex-client.js";
 
 function fakeAppServer() {
   const child = new EventEmitter();
@@ -67,4 +67,32 @@ test("starts a structured device-code login and receives completion", async () =
 
   assert.equal((await completed).success, true);
   await client.close();
+});
+
+test("primes usage with an ephemeral read-only Codex prompt", async () => {
+  let invocation;
+  const child = new EventEmitter();
+  child.stderr = new PassThrough();
+  child.kill = () => child.emit("exit", null, "SIGTERM");
+
+  const completed = primeCodexUsage({
+    spawnImpl(command, args, options) {
+      invocation = { command, args, options };
+      queueMicrotask(() => child.emit("exit", 0, null));
+      return child;
+    },
+    timeoutMs: 1_000,
+  });
+
+  await completed;
+  assert.equal(invocation.command, "codex");
+  assert.deepEqual(invocation.args.slice(0, 7), [
+    "exec",
+    "--ephemeral",
+    "--skip-git-repo-check",
+    "--sandbox",
+    "read-only",
+    "--ignore-user-config",
+    "Reply with only the answer to 1+1.",
+  ]);
 });

@@ -8,7 +8,11 @@ import {
   reauthenticationMessage,
 } from "./auth.js";
 import { loadConfig } from "./config.js";
-import { CodexAppServerClient, readCodexStatus } from "./codex-client.js";
+import {
+  CodexAppServerClient,
+  primeCodexUsage,
+  readCodexStatus,
+} from "./codex-client.js";
 import { loadState, saveState } from "./state.js";
 import { normalizeLanguage, translate } from "./i18n.js";
 import {
@@ -19,6 +23,7 @@ import {
 import {
   formatUsageMessage,
   normalizeUsage,
+  shouldPrimeFullUsage,
   usageNotificationDecision,
 } from "./usage.js";
 
@@ -45,13 +50,44 @@ async function login() {
 }
 
 async function poll(config, { forceSend = false } = {}) {
-  const { account, limits } = await readCodexStatus({
+  let { account, limits } = await readCodexStatus({
     command: config.codexCommand,
     timeoutMs: config.requestTimeoutMs,
   });
-  const usage = normalizeUsage(limits);
-  const state = await loadState(config.stateFile);
+  let usage = normalizeUsage(limits);
+  let state = await loadState(config.stateFile);
   const now = new Date();
+
+  if (
+    config.primeFullUsage &&
+    shouldPrimeFullUsage(usage, {
+      lastPrimeAt: state.lastFullUsagePrimeAt,
+      minIntervalMs: config.fullUsagePrimeCooldownMs,
+      now,
+    })
+  ) {
+    state = {
+      ...state,
+      lastFullUsagePrimeAt: now.toISOString(),
+      lastFullUsagePrimeError: null,
+    };
+    await saveState(config.stateFile, state);
+    try {
+      await primeCodexUsage({ command: config.codexCommand });
+      ({ account, limits } = await readCodexStatus({
+        command: config.codexCommand,
+        timeoutMs: config.requestTimeoutMs,
+      }));
+      usage = normalizeUsage(limits);
+      console.log("Primed full Codex usage with a one-shot prompt.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      state = { ...state, lastFullUsagePrimeError: message };
+      await saveState(config.stateFile, state);
+      console.error(message);
+    }
+  }
+
   const { shouldSend, fingerprint } = usageNotificationDecision(usage, {
     lastFingerprint: state.lastNotificationFingerprint,
     lastNotificationAt: state.lastNotificationAt,

@@ -200,3 +200,63 @@ export async function readCodexStatus(options) {
     await client.close();
   }
 }
+
+export async function primeCodexUsage({
+  command = "codex",
+  timeoutMs = 120_000,
+  spawnImpl = spawn,
+} = {}) {
+  const child = spawnImpl(
+    command,
+    [
+      "exec",
+      "--ephemeral",
+      "--skip-git-repo-check",
+      "--sandbox",
+      "read-only",
+      "--ignore-user-config",
+      "Reply with only the answer to 1+1.",
+    ],
+    {
+      stdio: ["ignore", "ignore", "pipe"],
+      env: process.env,
+    },
+  );
+
+  let stderr = "";
+  child.stderr?.setEncoding("utf8");
+  child.stderr?.on("data", (chunk) => {
+    stderr = `${stderr}${chunk}`.slice(-2_000);
+  });
+
+  await new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (callback) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      callback();
+    };
+    const timer = setTimeout(() => {
+      child.kill("SIGTERM");
+      finish(() => reject(new Error("Codex full-usage prime timed out")));
+    }, timeoutMs);
+
+    child.once("error", (error) => finish(() => reject(error)));
+    child.once("exit", (code, signal) => {
+      finish(() => {
+        if (code === 0) resolve();
+        else {
+          const detail = stderr.trim();
+          reject(
+            new Error(
+              `Codex full-usage prime failed (code=${code}, signal=${signal})${
+                detail ? `: ${detail}` : ""
+              }`,
+            ),
+          );
+        }
+      });
+    });
+  });
+}

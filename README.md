@@ -17,7 +17,7 @@ Check your ChatGPT Codex usage limits, reset times, and reset credits from Teleg
 - Instant checks with `/status`
 - A warning when your ChatGPT login expires
 
-The bot checks every 20 minutes. An automatic report is sent only when a displayed percentage or reset time has changed and at least 60 minutes have passed since the previous usage report. If several changes happen during that hour, only the latest result is sent. Because the five-hour reset time can move while the remaining amount is 100%, that reset-time change is ignored until the displayed amount drops below 100%.
+The bot checks every 20 minutes and displays and compares remaining usage to two decimal places. An automatic report is sent only when a displayed percentage or reset time has changed and at least 60 minutes have passed since the previous usage report. If several changes happen during that hour, only the latest result is sent. Because the five-hour reset time can move while the remaining amount is 100.00%, that reset-time change is ignored until the displayed amount drops below 100.00%.
 
 ## Before you start
 
@@ -95,7 +95,20 @@ Edit `.env`, then run `docker compose up -d --force-recreate` to apply changes.
 | --- | --- | --- |
 | `POLL_INTERVAL_MINUTES` | `20` | How often to check Codex usage |
 | `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | Minimum time between automatic reports |
+| `PRIME_FULL_USAGE` | `false` | Whether to send `1+1=?` once when both the five-hour and weekly limits are exactly 100% |
+| `FULL_USAGE_PRIME_COOLDOWN_MINUTES` | `20` | Minimum delay that prevents repeated `1+1=?` calls while the API catches up |
 | `TZ` | `Asia/Seoul` | Time zone shown in notifications |
+
+### Initialize reset times at 100% (optional)
+
+For some accounts, the unused weekly reset time can move on every check. Enable the following option to send one `1+1=?` prompt to Codex when both the five-hour and weekly limits are exactly 100% based on their raw values. The bot then checks the limits again immediately.
+
+```env
+PRIME_FULL_USAGE=true
+FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
+```
+
+This feature is disabled by default and consumes a small amount of Codex usage. Once the remaining amount changes to `99.xx%`, it does not run again. If ChatGPT resets both limits to exactly 100%, it runs once for the new cycle. The cooldown only prevents duplicate calls while the API is still reflecting the request.
 
 ## Update
 
