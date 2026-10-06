@@ -130,6 +130,23 @@ docker compose up -d --force-recreate
 
 Your ChatGPT login and bot state are kept when the container is updated.
 
+### Pinning and rolling back versions
+
+For production deployments, you can pin a release instead of using `latest`. Set
+the image version in `.env`, then recreate the container.
+
+```env
+IMAGE=wipoohyam/codex-usage-telegram:0.3.0
+```
+
+```sh
+docker compose pull
+docker compose up -d --force-recreate
+```
+
+To roll back, change `IMAGE` to an earlier release and run the same commands. See
+[CHANGELOG.md](CHANGELOG.md) for release notes.
+
 ## If something is not working
 
 - **No reply to `/status`:** Check that `TELEGRAM_CHAT_ID` is the numeric ID of the private chat where you sent the command. Then run `docker compose logs --tail=100 codex-usage`.

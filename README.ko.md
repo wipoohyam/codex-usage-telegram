@@ -128,6 +128,21 @@ docker compose up -d --force-recreate
 
 컨테이너를 업데이트해도 저장된 ChatGPT 로그인과 봇 상태는 유지됩니다.
 
+### 버전 고정과 롤백
+
+운영 환경에서는 `latest` 대신 릴리스 버전을 고정할 수 있습니다. `.env`에 이미지 버전을 지정한 뒤 컨테이너를 다시 만드세요.
+
+```env
+IMAGE=wipoohyam/codex-usage-telegram:0.3.0
+```
+
+```sh
+docker compose pull
+docker compose up -d --force-recreate
+```
+
+문제가 생기면 `IMAGE`를 이전 버전으로 변경해 같은 명령을 실행하면 롤백할 수 있습니다. 변경 내용은 [CHANGELOG.md](CHANGELOG.md)에서 확인하세요.
+
 ## 문제가 있을 때
 
 - **`/status`에 응답이 없을 때:** `TELEGRAM_CHAT_ID`가 명령을 보낸 개인 채팅의 숫자 ID인지 확인하세요. 이후 `docker compose logs --tail=100 codex-usage`로 로그를 확인합니다.

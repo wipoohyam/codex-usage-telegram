@@ -1,6 +1,6 @@
 {
   "name": "codex-usage-telegram",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Self-hosted Telegram notifications for ChatGPT Codex usage limits and reset credits",
   "type": "module",
   "main": "src/cli.js",

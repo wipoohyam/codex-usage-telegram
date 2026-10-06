@@ -41,7 +41,7 @@ export class CodexAppServerClient {
       clientInfo: {
         name: "codex_usage_telegram",
         title: "Codex Usage Telegram",
-        version: "0.2.0",
+        version: "0.3.0",
       },
     });
     this.notify("initialized", {});
