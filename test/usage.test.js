@@ -231,15 +231,25 @@ test("primes a full five-hour window only after the cooldown", () => {
   assert.equal(shouldPrimeFiveHourUsage(fullFiveHourButUsedWeekly), true);
   assert.equal(
     shouldPrimeFiveHourUsage(fullFiveHourUsage, {
+      cycleActive: true,
       lastPrimeAt: "2026-10-06T00:00:00.000Z",
-      now: new Date("2026-10-06T00:19:59.000Z"),
+      now: new Date("2026-10-06T00:20:00.000Z"),
     }),
     false,
   );
   assert.equal(
     shouldPrimeFiveHourUsage(fullFiveHourUsage, {
+      cycleActive: false,
       lastPrimeAt: "2026-10-06T00:00:00.000Z",
       now: new Date("2026-10-06T00:20:00.000Z"),
+    }),
+    true,
+  );
+  assert.equal(
+    shouldPrimeFiveHourUsage(fullFiveHourUsage, {
+      cycleActive: true,
+      lastPrimeAt: "2026-10-06T00:00:00.000Z",
+      now: new Date("2026-10-06T05:00:00.000Z"),
     }),
     true,
   );

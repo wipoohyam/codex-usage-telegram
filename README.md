@@ -112,9 +112,9 @@ PRIME_FULL_USAGE=true
 FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
 ```
 
-This feature is disabled by default and consumes a small amount of Codex usage. When enabled and the five-hour remaining amount is exactly `100.00%`, the bot sends the prime notice first, waits for the Codex request, retries the usage refresh up to three times, and then sends the latest usage report. If the API still reports 100%, the default 20-minute cooldown prevents another prime attempt.
+This feature is disabled by default and consumes a small amount of Codex usage. When enabled and the five-hour remaining amount is exactly `100.00%`, the bot sends the prime notice first, waits for the Codex request, retries the usage refresh up to three times, and then sends the latest usage report. The completed prime cycle is persisted, so a delayed API response that still says 100% does not cause another prime 20 minutes later. The lock clears after a later check observes less than 100%, allowing one prime after the next five-hour reset.
 
-While the bot is running, you can also use `/prime-on` or `/prime-off` to change the setting immediately. Telegram changes are saved in `data/state.json`, survive restarts, and take precedence over `PRIME_FULL_USAGE`. Use `/prime-status` to inspect the current setting.
+While the bot is running, you can also use `/prime-on` or `/prime-off` to change the setting immediately. Telegram changes are saved in `data/state.json`, survive restarts, and take precedence over `PRIME_FULL_USAGE`. Sending `/prime-on` again also clears the current cycle lock for a manual retry. Use `/prime-status` to inspect the current setting.
 
 Reset times can jitter slightly between API responses. By default, a reset time within three minutes of the previously notified value is treated as unchanged. A difference greater than three minutes is eligible to trigger a change notification.
 

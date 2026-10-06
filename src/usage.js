@@ -237,16 +237,22 @@ export function isFiveHourUsageFull(usage) {
 export function shouldPrimeFiveHourUsage(
   usage,
   {
+    cycleActive = false,
     lastPrimeAt = null,
     minIntervalMs = 20 * 60_000,
+    maxCycleMs = 5 * 60 * 60_000,
     now = new Date(),
   } = {},
 ) {
   if (!isFiveHourUsageFull(usage)) return false;
   const lastPrimeTime = Date.parse(lastPrimeAt);
+  const elapsed = Number.isFinite(lastPrimeTime)
+    ? now.getTime() - lastPrimeTime
+    : null;
+  if (cycleActive && (elapsed === null || elapsed < maxCycleMs)) return false;
   return (
-    !Number.isFinite(lastPrimeTime) ||
-    now.getTime() - lastPrimeTime >= minIntervalMs
+    elapsed === null ||
+    elapsed >= minIntervalMs
   );
 }
 

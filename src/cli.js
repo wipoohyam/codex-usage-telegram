@@ -63,10 +63,17 @@ async function poll(config, { forceSend = false } = {}) {
   let now = new Date();
   const primeEnabled = primeSettingStatus(config, state).enabled;
   let primeCompleted = false;
+  const fiveHourUsageFull = isFiveHourUsageFull(usage);
+
+  if (state.fiveHourPrimeCycleActive === true && !fiveHourUsageFull) {
+    state = { ...state, fiveHourPrimeCycleActive: false };
+    await saveState(config.stateFile, state);
+  }
 
   if (
     primeEnabled &&
     shouldPrimeFiveHourUsage(usage, {
+      cycleActive: state.fiveHourPrimeCycleActive === true,
       lastPrimeAt: state.lastFullUsagePrimeAt,
       minIntervalMs: config.fullUsagePrimeCooldownMs,
       now,
@@ -74,6 +81,7 @@ async function poll(config, { forceSend = false } = {}) {
   ) {
     state = {
       ...state,
+      fiveHourPrimeCycleActive: true,
       lastFullUsagePrimeAt: now.toISOString(),
       lastFullUsagePrimeError: null,
     };
@@ -336,6 +344,12 @@ async function telegramCommandLoop(config, checkUsage) {
             await saveState(config.stateFile, {
               ...state,
               primeFullUsageEnabled: enabled,
+              ...(enabled
+                ? {
+                    fiveHourPrimeCycleActive: false,
+                    lastFullUsagePrimeAt: null,
+                  }
+                : {}),
             });
             await sendMessage(
               config,
