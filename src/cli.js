@@ -23,6 +23,7 @@ import {
 } from "./telegram.js";
 import {
   formatUsageMessage,
+  isFiveHourUsageFull,
   normalizeUsage,
   shouldPrimeFiveHourUsage,
   usageNotificationDecision,
@@ -32,6 +33,8 @@ const command = process.argv[2] || "monitor";
 const LOGIN_CONFIRM_WINDOW_MS = 60_000;
 const LOGIN_TIMEOUT_MS = 10 * 60_000;
 const LOGIN_COOLDOWN_MS = 10 * 60_000;
+const PRIME_REFRESH_ATTEMPTS = 3;
+const PRIME_REFRESH_DELAY_MS = 5_000;
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -57,15 +60,21 @@ async function poll(config, { forceSend = false } = {}) {
   });
   let usage = normalizeUsage(limits);
   let state = await loadState(config.stateFile);
-  const now = new Date();
+  let now = new Date();
   const primeEnabled = primeSettingStatus(config, state).enabled;
+  let primeCompleted = false;
 
   if (
     primeEnabled &&
-    shouldPrimeFiveHourUsage(usage)
+    shouldPrimeFiveHourUsage(usage, {
+      lastPrimeAt: state.lastFullUsagePrimeAt,
+      minIntervalMs: config.fullUsagePrimeCooldownMs,
+      now,
+    })
   ) {
     state = {
       ...state,
+      lastFullUsagePrimeAt: now.toISOString(),
       lastFullUsagePrimeError: null,
     };
     await saveState(config.stateFile, state);
@@ -73,11 +82,17 @@ async function poll(config, { forceSend = false } = {}) {
       .catch((error) => console.error(`Prime notification failed: ${error.message}`));
     try {
       await primeCodexUsage({ command: config.codexCommand });
-      ({ account, limits } = await readCodexStatus({
-        command: config.codexCommand,
-        timeoutMs: config.requestTimeoutMs,
-      }));
-      usage = normalizeUsage(limits);
+      for (let attempt = 0; attempt < PRIME_REFRESH_ATTEMPTS; attempt += 1) {
+        if (attempt > 0) await sleep(PRIME_REFRESH_DELAY_MS);
+        ({ account, limits } = await readCodexStatus({
+          command: config.codexCommand,
+          timeoutMs: config.requestTimeoutMs,
+        }));
+        usage = normalizeUsage(limits);
+        if (!isFiveHourUsageFull(usage)) break;
+      }
+      now = new Date();
+      primeCompleted = true;
       console.log("Primed full Codex usage with a one-shot prompt.");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -95,7 +110,8 @@ async function poll(config, { forceSend = false } = {}) {
     lastFingerprint: state.lastNotificationFingerprint,
     lastNotificationAt: state.lastNotificationAt,
     minIntervalMs: config.notificationMinIntervalMs,
-    forceSend,
+    resetTimeToleranceSeconds: config.resetTimeToleranceSeconds,
+    forceSend: forceSend || primeCompleted,
     now,
   });
 

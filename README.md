@@ -98,7 +98,9 @@ Edit `.env`, then run `docker compose up -d --force-recreate` to apply changes.
 | --- | --- | --- |
 | `POLL_INTERVAL_MINUTES` | `20` | How often to check Codex usage |
 | `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | Minimum time between automatic reports |
+| `RESET_TIME_TOLERANCE_MINUTES` | `3` | Reset-time difference ignored as API jitter |
 | `PRIME_FULL_USAGE` | `false` | Whether to send `1+1=?` when the five-hour limit is exactly 100% |
+| `FULL_USAGE_PRIME_COOLDOWN_MINUTES` | `20` | Minimum delay preventing repeated prime calls while the API catches up |
 | `TZ` | `Asia/Seoul` | Time zone shown in notifications |
 
 ### Initialize reset times at 100% (optional)
@@ -107,11 +109,14 @@ For some accounts, the unused five-hour reset time can move on every check. Enab
 
 ```env
 PRIME_FULL_USAGE=true
+FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
 ```
 
-This feature is disabled by default and consumes a small amount of Codex usage. When enabled, it runs every time the five-hour remaining amount is reported as exactly `100.00%`. If the API still reports 100% after the request, it can run again on the next usage check.
+This feature is disabled by default and consumes a small amount of Codex usage. When enabled and the five-hour remaining amount is exactly `100.00%`, the bot sends the prime notice first, waits for the Codex request, retries the usage refresh up to three times, and then sends the latest usage report. If the API still reports 100%, the default 20-minute cooldown prevents another prime attempt.
 
 While the bot is running, you can also use `/prime-on` or `/prime-off` to change the setting immediately. Telegram changes are saved in `data/state.json`, survive restarts, and take precedence over `PRIME_FULL_USAGE`. Use `/prime-status` to inspect the current setting.
+
+Reset times can jitter slightly between API responses. By default, a reset time within three minutes of the previously notified value is treated as unchanged. A difference greater than three minutes is eligible to trigger a change notification.
 
 ## Update
 

@@ -226,12 +226,74 @@ export function notificationFingerprint(usage) {
   });
 }
 
-export function shouldPrimeFiveHourUsage(usage) {
+export function isFiveHourUsageFull(usage) {
   return usage.windows.some(
     (window) =>
       window.durationMinutes === 300 &&
       window.remainingPercent === 100,
   );
+}
+
+export function shouldPrimeFiveHourUsage(
+  usage,
+  {
+    lastPrimeAt = null,
+    minIntervalMs = 20 * 60_000,
+    now = new Date(),
+  } = {},
+) {
+  if (!isFiveHourUsageFull(usage)) return false;
+  const lastPrimeTime = Date.parse(lastPrimeAt);
+  return (
+    !Number.isFinite(lastPrimeTime) ||
+    now.getTime() - lastPrimeTime >= minIntervalMs
+  );
+}
+
+function fingerprintsMatchWithinResetTolerance(
+  previousFingerprint,
+  nextFingerprint,
+  resetTimeToleranceSeconds,
+) {
+  if (previousFingerprint === nextFingerprint) return true;
+
+  let previous;
+  let next;
+  try {
+    previous = JSON.parse(previousFingerprint);
+    next = JSON.parse(nextFingerprint);
+  } catch {
+    return false;
+  }
+
+  const previousWindows = previous?.windows;
+  const nextWindows = next?.windows;
+  if (!Array.isArray(previousWindows) || !Array.isArray(nextWindows)) return false;
+  if (previousWindows.length !== nextWindows.length) return false;
+
+  return previousWindows.every((previousWindow, index) => {
+    const nextWindow = nextWindows[index];
+    if (
+      previousWindow.bucketId !== nextWindow.bucketId ||
+      previousWindow.kind !== nextWindow.kind ||
+      previousWindow.durationMinutes !== nextWindow.durationMinutes ||
+      previousWindow.remainingPercent !== nextWindow.remainingPercent
+    ) {
+      return false;
+    }
+
+    if (previousWindow.resetsAt === nextWindow.resetsAt) return true;
+    if (
+      !Number.isFinite(previousWindow.resetsAt) ||
+      !Number.isFinite(nextWindow.resetsAt)
+    ) {
+      return false;
+    }
+    return (
+      Math.abs(previousWindow.resetsAt - nextWindow.resetsAt) <=
+      resetTimeToleranceSeconds
+    );
+  });
 }
 
 export function usageNotificationDecision(
@@ -240,6 +302,7 @@ export function usageNotificationDecision(
     lastFingerprint = null,
     lastNotificationAt = null,
     minIntervalMs = 60 * 60_000,
+    resetTimeToleranceSeconds = 3 * 60,
     forceSend = false,
     now = new Date(),
   } = {},
@@ -247,7 +310,11 @@ export function usageNotificationDecision(
   const fingerprint = notificationFingerprint(usage);
   if (forceSend) return { shouldSend: true, fingerprint };
 
-  const changed = lastFingerprint !== fingerprint;
+  const changed = !fingerprintsMatchWithinResetTolerance(
+    lastFingerprint,
+    fingerprint,
+    resetTimeToleranceSeconds,
+  );
   const lastNotificationTime = Date.parse(lastNotificationAt);
   const intervalElapsed =
     !Number.isFinite(lastNotificationTime) ||

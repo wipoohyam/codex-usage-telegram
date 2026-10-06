@@ -46,11 +46,23 @@ export function loadConfig(env = process.env, { requireTelegram = true } = {}) {
         60,
         "NOTIFICATION_MIN_INTERVAL_MINUTES",
       ) * 60_000,
+    resetTimeToleranceSeconds:
+      positiveNumber(
+        env.RESET_TIME_TOLERANCE_MINUTES,
+        3,
+        "RESET_TIME_TOLERANCE_MINUTES",
+      ) * 60,
     primeFullUsage: booleanValue(
       env.PRIME_FULL_USAGE,
       false,
       "PRIME_FULL_USAGE",
     ),
+    fullUsagePrimeCooldownMs:
+      positiveNumber(
+        env.FULL_USAGE_PRIME_COOLDOWN_MINUTES,
+        20,
+        "FULL_USAGE_PRIME_COOLDOWN_MINUTES",
+      ) * 60_000,
     requestTimeoutMs:
       positiveNumber(env.REQUEST_TIMEOUT_SECONDS, 30, "REQUEST_TIMEOUT_SECONDS") * 1_000,
     telegramLongPollSeconds: positiveNumber(

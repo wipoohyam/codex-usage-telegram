@@ -91,6 +91,31 @@ test("uses displayed percentages and reset times for notification changes", () =
   assert.notEqual(notificationFingerprint(changedReset), fingerprint);
 });
 
+test("ignores reset-time jitter within three minutes but detects larger moves", () => {
+  const usage = normalizeUsage(response);
+  const fingerprint = notificationFingerprint(usage);
+  const withResetOffset = (seconds) =>
+    normalizeUsage({
+      rateLimits: {
+        ...response.rateLimits,
+        primary: {
+          ...response.rateLimits.primary,
+          resetsAt: response.rateLimits.primary.resetsAt + seconds,
+        },
+      },
+    });
+  const decision = (nextUsage) =>
+    usageNotificationDecision(nextUsage, {
+      lastFingerprint: fingerprint,
+      lastNotificationAt: "2026-09-21T00:00:00.000Z",
+      now: new Date("2026-09-21T02:00:00.000Z"),
+    }).shouldSend;
+
+  assert.equal(decision(withResetOffset(60)), false);
+  assert.equal(decision(withResetOffset(180)), false);
+  assert.equal(decision(withResetOffset(181)), true);
+});
+
 test("ignores five-hour reset changes while remaining usage is exactly 100 percent", () => {
   const first = normalizeUsage({
     rateLimits: {
@@ -179,7 +204,7 @@ test("waits an hour after the last usage notification and compares with the sent
   );
 });
 
-test("primes whenever the five-hour window displays 100 percent", () => {
+test("primes a full five-hour window only after the cooldown", () => {
   const fullFiveHourUsage = normalizeUsage({
     rateLimits: {
       limitId: "codex",
@@ -204,4 +229,18 @@ test("primes whenever the five-hour window displays 100 percent", () => {
   assert.equal(shouldPrimeFiveHourUsage(fullFiveHourUsage), true);
   assert.equal(shouldPrimeFiveHourUsage(usedFiveHourUsage), false);
   assert.equal(shouldPrimeFiveHourUsage(fullFiveHourButUsedWeekly), true);
+  assert.equal(
+    shouldPrimeFiveHourUsage(fullFiveHourUsage, {
+      lastPrimeAt: "2026-10-06T00:00:00.000Z",
+      now: new Date("2026-10-06T00:19:59.000Z"),
+    }),
+    false,
+  );
+  assert.equal(
+    shouldPrimeFiveHourUsage(fullFiveHourUsage, {
+      lastPrimeAt: "2026-10-06T00:00:00.000Z",
+      now: new Date("2026-10-06T00:20:00.000Z"),
+    }),
+    true,
+  );
 });
