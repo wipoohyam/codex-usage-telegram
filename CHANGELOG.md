@@ -3,6 +3,19 @@
 All notable changes to this project are documented in this file. Releases follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+
+- Notifications for new reset announcements reported by the Codex Resets public API.
+- Conditional reset checks with ETag support and persisted reset IDs to prevent duplicate alerts.
+- Automatic Docker Hub Overview updates during container publishing.
+
+### Changed
+
+- Prime notifications now show the five-hour remaining amount and the action on separate lines.
+- Rewrote the English, Korean, and Docker Hub documentation around the user setup and operation flow.
+
 ## [0.3.0] - 2026-10-06
 
 ### Added

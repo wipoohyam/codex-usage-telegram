@@ -1,124 +1,153 @@
 # Codex Usage Telegram
 
-[English](README.md) | [한국어](README.ko.md)
+[English](README.md) | **한국어**
+
+ChatGPT Codex 잔여량과 초기화 시각을 Telegram에서 확인하고, 달라졌을 때만 알림을 받는 셀프 호스팅 봇입니다. OpenAI API 키는 필요하지 않습니다.
 
 <p align="center">
-  <img src="alarm_message.jpg" alt="텔레그램으로 받는 Codex 사용량 알림" width="500">
+  <img src="alarm_message.jpg" alt="Telegram으로 받는 Codex 사용량 알림" width="500">
 </p>
 
-ChatGPT Codex의 잔여 사용량, 초기화 시각, 리셋 쿠폰을 텔레그램에서 확인할 수 있습니다. 의미 있는 변화가 있을 때만 알려주므로 같은 내용의 알림이 반복되지 않습니다. OpenAI API 키는 필요하지 않습니다.
+## 이 봇으로 할 수 있는 일
 
-## 무엇을 확인할 수 있나요?
+- `/status` 한 번으로 5시간·주간 잔여량과 초기화 시각 확인
+- 리셋 쿠폰 수량과 만료 시각 확인
+- 잔여량이나 초기화 시각이 실제로 달라졌을 때 자동 알림
+- [Codex Resets](https://codex-resets.com)의 새로운 커뮤니티 reset 발표 알림
+- Telegram에서 ChatGPT 재로그인 및 알림 언어 변경
+- 선택적으로 5시간 한도가 100%일 때 작은 Codex 요청을 보내 실제 사용 주기 시작
 
-- 5시간·주간 및 Codex가 제공하는 다른 구간의 잔여 사용량
-- 정확한 초기화 시각과 남은 시간
-- 제공되는 경우 리셋 쿠폰 수량과 만료 시각
-- 한국어·영어·중국어·일본어 자동 알림
-- `/status`를 이용한 즉시 조회
-- ChatGPT 로그인 만료 알림
+한국어·영어·중국어·일본어를 지원하며, 외부에서 접속할 포트나 웹 서버가 필요하지 않습니다.
 
-봇은 기본적으로 20분마다 사용량을 확인합니다. 잔여량은 소수점 둘째 자리까지 표시·비교합니다. 표시 퍼센티지 또는 초기화 시각이 달라지고, 이전 사용량 메시지로부터 60분 이상 지났을 때만 자동 알림을 보냅니다. 60분 동안 여러 번 바뀌면 가장 최신 상태만 한 번 전송합니다. 5시간 잔여량이 100.00%일 때는 초기화 시각이 계속 움직일 수 있으므로, 표시 잔여량이 100.00% 미만이 될 때까지 해당 초기화 시각의 변화는 무시합니다.
+## 설치 전 준비
 
-## 준비물
+1. Docker Compose를 실행할 PC 또는 서버
+2. [@BotFather](https://t.me/BotFather)에서 만든 Telegram 봇
+3. Codex를 사용할 수 있는 ChatGPT 계정
 
-- Docker Compose를 실행할 수 있는 PC 또는 서버
-- [@BotFather](https://t.me/BotFather)에서 발급받은 텔레그램 봇 토큰
-- Codex를 사용할 수 있는 ChatGPT 계정
+보안을 위해 봇은 본인의 Telegram 개인 채팅에서만 사용하세요.
 
-봇은 반드시 개인 텔레그램 채팅에서 사용하세요. 다른 사람이 접근할 수 있는 그룹에는 추가하지 않는 것이 좋습니다.
+## 빠른 설치
 
-## 설치하기
+### 1. 프로젝트와 설정 파일 준비
 
-1. 프로젝트를 받고 설정 파일을 만듭니다.
+```sh
+git clone https://github.com/wipoohyam/codex-usage-telegram.git
+cd codex-usage-telegram
+cp .env.example .env
+```
 
-   ```sh
-   git clone https://github.com/wipoohyam/codex-usage-telegram.git
-   cd codex-usage-telegram
-   cp .env.example .env
-   ```
+### 2. Telegram 채팅 ID 확인
 
-2. 새 텔레그램 봇에게 아무 메시지나 보냅니다. 그다음 `<YOUR_TOKEN>`을 BotFather에서 받은 토큰으로 바꿔 아래 주소를 브라우저에서 엽니다.
+새 봇에게 아무 메시지나 보낸 다음, `<YOUR_TOKEN>`을 BotFather에서 받은 토큰으로 바꿔 아래 주소를 브라우저에서 엽니다.
 
-   ```text
-   https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
-   ```
+```text
+https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates
+```
 
-   응답에서 `message.chat.id`를 찾습니다. 이 숫자가 개인 채팅 ID입니다.
+응답의 `message.chat.id` 숫자가 개인 채팅 ID입니다.
 
-3. `.env`를 열고 봇 토큰과 채팅 ID를 입력합니다.
+### 3. `.env` 입력
 
-   ```env
-   TELEGRAM_BOT_TOKEN=봇_토큰
-   TELEGRAM_CHAT_ID=숫자_채팅_ID
-   ```
+```env
+TELEGRAM_BOT_TOKEN=BotFather에서_받은_토큰
+TELEGRAM_CHAT_ID=개인_채팅_ID
+```
 
-   `.env`에는 봇 토큰이 들어 있으므로 공개하거나 공유하면 안 됩니다.
+`.env`에는 봇 제어 권한이 있는 토큰이 들어 있으므로 공유하거나 Git에 올리지 마세요.
 
-4. ChatGPT의 **설정 → 보안**에서 **Codex용 장치 코드 인증**을 활성화합니다.
+### 4. ChatGPT 장치 인증 허용
 
-5. 최신 이미지를 받고 봇을 시작합니다.
+ChatGPT의 **설정 → 보안**에서 **Codex용 장치 코드 인증**을 활성화합니다.
 
-   ```sh
-   docker compose pull
-   docker compose up -d
-   ```
+### 5. 봇 시작 및 로그인
 
-6. ChatGPT에 로그인합니다. 서버에서 직접 로그인하는 방법이 더 안전합니다.
+```sh
+docker compose pull
+docker compose up -d
+docker compose run --rm codex-usage login
+```
 
-   ```sh
-   docker compose run --rm codex-usage login
-   ```
+표시된 주소에서 장치 코드를 입력해 ChatGPT 로그인을 마칩니다. 로그인 정보와 봇 상태는 Docker 볼륨에 저장되므로 컨테이너를 업데이트해도 유지됩니다.
 
-   텔레그램 개인 채팅에서 `/login`을 보낸 뒤 60초 안에 `/login_confirm`을 보내도 됩니다. 전달된 인증 주소를 열고 일회용 코드를 입력하세요. 로그인 관련 메시지는 성공·실패 또는 약 10분 후 자동으로 삭제됩니다.
+이제 Telegram 봇에게 `/status`를 보내세요. 현재 Codex 잔여량이 오면 설치가 끝난 것입니다.
 
-7. 봇에게 `/status`를 보냅니다. 현재 Codex 잔여 한도가 바로 도착하면 설치가 완료된 것입니다.
+> Telegram에서 `/login`을 보내고 60초 안에 `/login_confirm`을 보내는 방법도 있습니다. 다만 일회용 코드가 Telegram을 통과하므로 서버에서 직접 로그인하는 방법을 권장합니다.
 
-## 텔레그램 명령어
+## 자주 쓰는 명령어
 
-| 명령어 | 기능 |
+| 명령어 | 하는 일 |
 | --- | --- |
-| `/status` | 현재 사용량을 즉시 확인합니다 |
-| `/prime-on` | 5시간 prime(1+1 전송)을 켭니다 |
-| `/prime-off` | 5시간 prime(1+1 전송)을 끕니다 |
-| `/prime-status` | 5시간 prime의 현재 상태를 확인합니다 |
-| `/login` | ChatGPT 로그인 또는 재로그인을 시작합니다 |
-| `/login_confirm` | 60초 안에 텔레그램 로그인 요청을 확인합니다 |
-| `/language` | 한국어·영어·중국어·일본어를 선택합니다 |
+| `/status` | 현재 Codex 잔여량을 즉시 조회합니다 |
+| `/language` | 알림 언어를 선택합니다 |
+| `/prime-on` | 5시간 prime을 켭니다 |
+| `/prime-off` | 5시간 prime을 끕니다 |
+| `/prime-status` | prime 설정 상태를 확인합니다 |
+| `/login` | Telegram을 통한 ChatGPT 로그인을 시작합니다 |
+| `/login_confirm` | 60초 안에 로그인 요청을 확인합니다 |
 | `/help` | 사용할 수 있는 명령어를 표시합니다 |
 
-예를 들어 `/language ko`를 보내면 알림이 한국어로 바뀝니다. `/status`로 직접 조회하면 다음 자동 알림까지의 60분 간격도 그 시점부터 다시 계산됩니다. prime이 실제로 실행될 때마다 봇이 Telegram으로 알림을 보냅니다.
+## 언제 알림이 오나요?
 
-## 바꿔볼 만한 설정
+봇은 기본적으로 20분마다 Codex 잔여량을 확인합니다.
 
-`.env`를 수정한 다음 `docker compose up -d --force-recreate`를 실행하면 적용됩니다.
+- 잔여 퍼센트 또는 초기화 시각이 달라져야 자동 사용량 알림 대상이 됩니다.
+- 자동 사용량 알림은 마지막 알림으로부터 기본 60분이 지난 뒤 보냅니다.
+- 60분 동안 여러 변화가 생기면 가장 최신 상태만 한 번 보냅니다.
+- 초기화 시각이 3분 이내로 흔들리는 것은 같은 값으로 취급합니다.
+- 5시간 잔여량이 정확히 100%일 때 움직이는 초기화 시각은 사용이 시작될 때까지 무시합니다.
+- `/status`는 기다리지 않고 현재 상태를 바로 보내며, 자동 알림 간격도 그 시점부터 다시 계산합니다.
 
-| 변수 | 기본값 | 용도 |
-| --- | --- | --- |
-| `POLL_INTERVAL_MINUTES` | `20` | Codex 사용량을 확인하는 간격 |
-| `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | 자동 알림 사이의 최소 간격 |
-| `RESET_TIME_TOLERANCE_MINUTES` | `3` | 초기화 시각의 차이를 변경으로 보지 않는 허용 범위 |
-| `PRIME_FULL_USAGE` | `false` | 5시간 한도가 정확히 100%일 때 `1+1=?`를 보내 초기화 시각을 확정할지 여부 |
-| `FULL_USAGE_PRIME_COOLDOWN_MINUTES` | `20` | API 반영 지연 중 prime이 반복 실행되지 않게 하는 최소 간격 |
-| `TZ` | `Asia/Seoul` | 알림에 표시할 시간대 |
+### 새로운 reset 발표
 
-### 100% 한도 초기화 시각 확정하기(선택 사항)
+사용량 조회가 성공하면 [Codex Resets](https://codex-resets.com)의 공개 API도 확인합니다. 마지막으로 확인한 reset ID와 다른 새 발표가 있을 때 별도 메시지를 한 번만 보냅니다. 외부 API가 일시적으로 실패해도 Codex 잔여량 조회는 계속 동작합니다.
 
-일부 계정에서는 사용 전 5시간 초기화 시각이 조회할 때마다 움직일 수 있습니다. 아래 옵션을 켜면 5시간 한도가 실제 값 기준으로 정확히 100%일 때 Codex에 `1+1=?`를 보내 실제 사용 주기를 시작하고, 곧바로 한도를 다시 조회합니다.
+Codex Resets는 커뮤니티 추적 정보이며 OpenAI의 공식 발표나 보장을 의미하지 않습니다.
+
+## 5시간 prime 사용하기
+
+일부 계정은 사용 전 5시간 초기화 시각이 조회할 때마다 움직입니다. prime을 켜면 5시간 잔여량의 실제 값이 정확히 100%일 때 Codex에 `1+1=?`를 한 번 보내 사용 주기를 시작하고, 잔여량을 다시 조회합니다.
+
+Telegram에서 `/prime-on`을 보내거나 `.env`에 다음 값을 설정합니다.
 
 ```env
 PRIME_FULL_USAGE=true
 FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
 ```
 
-이 기능은 기본적으로 꺼져 있으며 소량의 Codex 사용량을 소비합니다. 기능이 켜져 있고 5시간 잔여량이 `100.00%`이면 prime 안내를 먼저 보내고, Codex 요청이 끝난 뒤 사용량을 최대 세 번 다시 확인한 다음 최신 잔여 한도를 보냅니다. 한번 prime을 실행한 주기는 상태에 기록되므로 API 반영이 늦어 계속 100%로 보이더라도 20분 뒤 반복 실행하지 않습니다. 이후 잔여량이 100% 미만으로 확인되면 잠금이 해제되어 다음 5시간 초기화에서 다시 한 번 실행할 수 있습니다.
+실행 알림은 다음처럼 표시됩니다.
 
-실행 중인 봇에서 `/prime-on`, `/prime-off`로 이 기능을 즉시 켜고 끌 수도 있습니다. Telegram 명령으로 변경한 값은 `data/state.json`에 저장되어 재시작 후에도 유지되며, 환경변수 값보다 우선합니다. `/prime-on`을 다시 보내면 현재 주기의 잠금도 초기화되어 수동으로 재시도할 수 있습니다. `/prime-status`로 현재 상태를 확인하세요.
+```text
+⏰ 5시간 잔여량: 100.00%
+⚡ Prime 실행: Codex에 1+1 요청을 보냅니다.
+```
 
-초기화 시각은 API 응답에서 소폭 흔들릴 수 있습니다. 기본값에서는 이전에 알린 시각과 3분 이하로 차이 나는 값은 같은 시각으로 취급하며, 3분을 초과해 달라질 때만 변경 알림 조건에 포함합니다.
+prime은 기본적으로 꺼져 있으며 소량의 Codex 사용량을 소비합니다. 같은 주기에서 반복 요청하지 않도록 실행 상태를 저장하고, API 반영을 기다리는 최소 간격은 기본 20분입니다. `/prime-on`을 다시 보내면 저장된 prime 실행 상태가 초기화되어 다음 조회에서 다시 실행될 수 있습니다.
 
-## 업데이트
+주간 잔여량, 리셋 쿠폰, Codex Resets 발표는 prime 실행 조건에 포함되지 않습니다.
 
-프로젝트 폴더에서 다음 명령을 실행합니다.
+## 설정 바꾸기
+
+`.env`를 수정한 뒤 `docker compose up -d --force-recreate`를 실행하세요.
+
+| 변수 | 기본값 | 설명 |
+| --- | --- | --- |
+| `POLL_INTERVAL_MINUTES` | `20` | Codex 잔여량 조회 간격 |
+| `NOTIFICATION_MIN_INTERVAL_MINUTES` | `60` | 자동 사용량 알림의 최소 간격 |
+| `RESET_TIME_TOLERANCE_MINUTES` | `3` | 무시할 초기화 시각 흔들림 |
+| `PRIME_FULL_USAGE` | `false` | 5시간 prime 기본 설정 |
+| `FULL_USAGE_PRIME_COOLDOWN_MINUTES` | `20` | prime 최소 재실행 간격 |
+| `TZ` | `Asia/Seoul` | 알림에 표시할 시간대 |
+| `REQUEST_TIMEOUT_SECONDS` | `30` | Codex·Telegram·reset API 요청 제한 시간 |
+| `TELEGRAM_LONG_POLL_SECONDS` | `50` | Telegram 명령 대기 시간 |
+| `CODEX_COMMAND` | `codex` | Codex 실행 파일 이름 또는 경로 |
+| `IMAGE` | `wipoohyam/codex-usage-telegram:latest` | 실행할 컨테이너 이미지 |
+
+Telegram에서 바꾼 prime 값은 재시작 후에도 유지되며 `.env`의 기본값보다 우선합니다.
+
+## 업데이트와 운영
+
+최신 버전으로 업데이트합니다.
 
 ```sh
 git pull
@@ -126,49 +155,51 @@ docker compose pull
 docker compose up -d --force-recreate
 ```
 
-컨테이너를 업데이트해도 저장된 ChatGPT 로그인과 봇 상태는 유지됩니다.
-
-### 버전 고정과 롤백
-
-운영 환경에서는 `latest` 대신 릴리스 버전을 고정할 수 있습니다. `.env`에 이미지 버전을 지정한 뒤 컨테이너를 다시 만드세요.
-
-```env
-IMAGE=wipoohyam/codex-usage-telegram:0.3.0
-```
+로그를 확인합니다.
 
 ```sh
-docker compose pull
-docker compose up -d --force-recreate
+docker compose logs --tail=100 codex-usage
 ```
 
-문제가 생기면 `IMAGE`를 이전 버전으로 변경해 같은 명령을 실행하면 롤백할 수 있습니다. 변경 내용은 [CHANGELOG.md](CHANGELOG.md)에서 확인하세요.
+버전을 고정하거나 롤백하려면 `.env`에 이미지 태그를 지정합니다.
 
-## 문제가 있을 때
+```env
+IMAGE=wipoohyam/codex-usage-telegram:<version>
+```
 
-- **`/status`에 응답이 없을 때:** `TELEGRAM_CHAT_ID`가 명령을 보낸 개인 채팅의 숫자 ID인지 확인하세요. 이후 `docker compose logs --tail=100 codex-usage`로 로그를 확인합니다.
-- **로그인이 만료됐을 때:** `/login`과 `/login_confirm`을 다시 보내거나, 서버에서 `docker compose run --rm codex-usage login`을 실행하세요.
-- **조회가 한 번 타임아웃됐을 때:** 다음 자동 조회를 기다리거나 `/status`를 다시 보내세요. 한 번의 타임아웃은 대부분 일시적입니다.
-- **설정을 바꿨는데 적용되지 않을 때:** `docker compose up -d --force-recreate`로 컨테이너를 다시 만드세요.
-
-## 중지 또는 제거
-
-로그인과 설정을 유지하면서 봇을 중지합니다.
+봇만 중지하고 로그인과 상태를 유지하려면 다음 명령을 사용합니다.
 
 ```sh
 docker compose down
 ```
 
-저장된 ChatGPT 로그인과 알림 상태까지 의도적으로 삭제하려는 경우가 아니라면 `-v`를 추가하지 마세요.
+저장된 로그인과 알림 상태까지 삭제할 의도가 아니라면 `docker compose down -v`를 실행하지 마세요. 변경 사항은 [CHANGELOG.md](CHANGELOG.md)에서 확인할 수 있습니다.
 
-## 보안 주의사항
+## 문제가 있을 때
 
-- `.env`를 공유하거나 Git에 올리지 마세요.
-- 설정한 개인 채팅에서만 봇을 사용하세요.
-- 장치 로그인 코드는 만료될 때까지 비밀번호처럼 취급하세요.
-- 가능하면 서버에서 직접 로그인하세요.
+- **`/status`에 응답이 없음:** 봇에게 먼저 메시지를 보냈는지, `TELEGRAM_CHAT_ID`가 그 개인 채팅의 숫자 ID인지 확인한 뒤 로그를 확인하세요.
+- **ChatGPT 로그인이 만료됨:** `docker compose run --rm codex-usage login`을 다시 실행하세요.
+- **설정 변경이 반영되지 않음:** `docker compose up -d --force-recreate`를 실행하세요.
+- **한 번의 조회가 실패함:** 다음 자동 조회를 기다리거나 `/status`를 다시 보내세요.
+- **reset 발표 조회만 실패함:** 외부 Codex Resets API 오류는 사용량 조회를 중단시키지 않습니다.
 
-자세한 내용은 공식 [Codex 인증 문서](https://developers.openai.com/codex/auth)를 참고하세요.
+## 보안과 데이터
 
-## 라이선스
+- `.env`와 장치 로그인 코드를 다른 사람에게 보여주지 마세요.
+- 봇을 공개 그룹에 추가하지 마세요.
+- 가능하면 Telegram 로그인보다 서버 로그인을 사용하세요.
+- ChatGPT 인증 정보는 `codex-auth` 볼륨에, 알림 상태는 `codex-usage-data` 볼륨에 저장됩니다.
+- 외부에서 들어오는 포트를 열지 않으며 Telegram 명령은 long polling으로 받습니다.
 
-MIT
+Codex 인증 방식은 OpenAI의 [공식 Codex 인증 문서](https://developers.openai.com/codex/auth)를 참고하세요.
+
+## 개발 및 라이선스
+
+```sh
+npm test
+npm run check
+```
+
+기여 방법은 [CONTRIBUTING.md](CONTRIBUTING.md), 보안 문제 제보는 [SECURITY.md](SECURITY.md)를 확인하세요.
+
+MIT License
