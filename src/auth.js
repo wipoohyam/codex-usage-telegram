@@ -42,6 +42,14 @@ export function loginWarningMessage(language = "ko") {
   ].join("\n");
 }
 
+export function loginCodeMessage(userCode, language = "ko") {
+  const prefix = `${translate(language, "loginCodeTitle")}\n\n`;
+  return {
+    text: `${prefix}${userCode}`,
+    entities: [{ type: "spoiler", offset: prefix.length, length: userCode.length }],
+  };
+}
+
 export function reauthenticationMessage(detail, language = "ko") {
   const selectedLanguage = normalizeLanguage(language);
   return [

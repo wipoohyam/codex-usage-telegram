@@ -88,6 +88,11 @@ Send `/status` to the Telegram bot. If your current Codex limits arrive, setup i
 | `/login` | Starts ChatGPT login through Telegram |
 | `/login_confirm` | Confirms the login request within 60 seconds |
 | `/help` | Lists available commands |
+| `/start` | Shows bot information and all commands |
+
+`/help` and `/start` include every supported command, the four `/language ko|en|zh|ja` choices, and aliases. `/lang` works like `/language`; language names (`한국어`, `English`, `中文`, `日本語`) also work instead of codes. `/login-confirm` and `/login confirm` work like `/login_confirm`.
+
+Each message identifies its function on the first line, including login progress, verification codes, language settings, and errors.
 
 ## When notifications are sent
 

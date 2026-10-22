@@ -2,6 +2,7 @@
 import { spawn } from "node:child_process";
 import {
   isAuthenticationError,
+  loginCodeMessage,
   loginWarningMessage,
   parseLanguageCommand,
   parseLoginCommand,
@@ -248,7 +249,7 @@ async function runTelegramLogin(config, checkUsage, loginState, language) {
     const instructionMessage = await sendMessage(
       config,
       [
-        "🔐 Codex 장치 로그인",
+        translate(language, "loginTitle"),
         "",
         challenge.verificationUrl,
         "",
@@ -262,9 +263,8 @@ async function runTelegramLogin(config, checkUsage, loginState, language) {
       protectedMessageIds.push(instructionMessage.message_id);
     }
 
-    const codeMessage = await sendMessage(config, challenge.userCode, {
-      entities: [{ type: "spoiler", offset: 0, length: challenge.userCode.length }],
-    });
+    const { text: codeText, entities: codeEntities } = loginCodeMessage(challenge.userCode, language);
+    const codeMessage = await sendMessage(config, codeText, { entities: codeEntities });
     if (codeMessage?.message_id) protectedMessageIds.push(codeMessage.message_id);
 
     const completionOutcome = await completionPromise;

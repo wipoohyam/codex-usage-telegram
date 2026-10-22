@@ -5,6 +5,14 @@ All notable changes to this project are documented in this file. Releases follow
 
 ## Unreleased
 
+## [0.4.1] - 2026-10-22
+
+### Fixed
+
+- Give login, language-setting, usage-error, and Prime-setting replies a clear first-line title in all four languages.
+- Add localized titles to device-login instructions and the separate verification-code message while keeping only the code masked and copyable.
+- Show all supported commands in `/help` and `/start`, including language options, `/lang`, and login confirmation aliases.
+
 ## [0.4.0] - 2026-10-22
 
 ### Added

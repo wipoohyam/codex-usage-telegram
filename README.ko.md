@@ -86,6 +86,11 @@ docker compose run --rm codex-usage login
 | `/login` | Telegram을 통한 ChatGPT 로그인을 시작합니다 |
 | `/login_confirm` | 60초 안에 로그인 요청을 확인합니다 |
 | `/help` | 사용할 수 있는 명령어를 표시합니다 |
+| `/start` | 봇 안내와 전체 명령어를 표시합니다 |
+
+`/help`와 `/start`에는 전체 명령어, `/language ko`, `/language en`, `/language zh`, `/language ja`와 지원 별칭까지 표시합니다. `/lang`은 `/language`와 같고, 언어 코드 대신 `한국어`, `English`, `中文`, `日本語`도 사용할 수 있습니다. `/login-confirm`과 `/login confirm`은 `/login_confirm`과 같습니다.
+
+로그인 진행 상태·인증 코드·언어 설정·오류 메시지도 첫 줄에 기능을 표시합니다.
 
 ## 언제 알림이 오나요?
 

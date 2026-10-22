@@ -56,6 +56,9 @@ Send `/status` to the bot to see your current limits.
 | `/login` | Start ChatGPT login through Telegram |
 | `/login_confirm` | Confirm the login request within 60 seconds |
 | `/help` | List commands |
+| `/start` | Show bot information and all commands |
+
+`/help` and `/start` list all commands, language choices (`/language ko`, `/language en`, `/language zh`, `/language ja`), and aliases. `/lang` is equivalent to `/language`; language names (`한국어`, `English`, `中文`, `日本語`) are also accepted. `/login-confirm` and `/login confirm` are equivalent to `/login_confirm`. Each message identifies its function on the first line, including login status, verification codes, settings, and errors.
 
 ## Notification behavior
 

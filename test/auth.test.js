@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   isAuthenticationError,
+  loginCodeMessage,
   loginWarningMessage,
   parseLanguageCommand,
   parseLoginCommand,
@@ -37,4 +38,16 @@ test("security and reauthentication messages explain the risk and recovery", () 
   assert.match(loginWarningMessage(), /\/login_confirm/);
   assert.match(reauthenticationMessage("token expired"), /재로그인/);
   assert.match(reauthenticationMessage("token expired"), /docker compose run --rm codex-usage login/);
+});
+
+test("login codes have a localized title and mask only the copyable code", () => {
+  for (const language of ["ko", "en", "zh", "ja"]) {
+    const message = loginCodeMessage("ABCD-EFGH", language);
+    assert.match(message.text.split("\n")[0], /^🔑 Codex /);
+    assert.equal(message.entities.length, 1);
+    const entity = message.entities[0];
+    assert.equal(entity.type, "spoiler");
+    assert.equal(message.text.slice(entity.offset, entity.offset + entity.length), "ABCD-EFGH");
+    assert.equal(message.text.slice(0, entity.offset).endsWith("\n\n"), true);
+  }
 });
