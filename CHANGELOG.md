@@ -5,16 +5,24 @@ All notable changes to this project are documented in this file. Releases follow
 
 ## Unreleased
 
+## [0.4.0] - 2026-10-22
+
 ### Added
 
 - Notifications for new reset announcements reported by the Codex Resets public API.
+- Advance Telegram notices for scheduled resets, including the expected time in the configured time zone.
+- Pending schedule notifications on installation or upgrade, persisted deduplication, and updated notices when the schedule changes.
 - Conditional reset checks with ETag support and persisted reset IDs to prevent duplicate alerts.
 - Automatic Docker Hub Overview updates during container publishing.
 
 ### Changed
 
-- Prime notifications now show the five-hour remaining amount and the action on separate lines.
+- Prime notifications now identify the action on the first line in all four languages.
 - Rewrote the English, Korean, and Docker Hub documentation around the user setup and operation flow.
+
+### Fixed
+
+- Persist each delivered reset alert before sending the next one, and update the ETag only after all deliveries succeed so failed sends can be retried without repeating successful alerts.
 
 ## [0.3.0] - 2026-10-06
 

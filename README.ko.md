@@ -13,7 +13,7 @@ ChatGPT Codex 잔여량과 초기화 시각을 Telegram에서 확인하고, 달�
 - `/status` 한 번으로 5시간·주간 잔여량과 초기화 시각 확인
 - 리셋 쿠폰 수량과 만료 시각 확인
 - 잔여량이나 초기화 시각이 실제로 달라졌을 때 자동 알림
-- [Codex Resets](https://codex-resets.com)의 새로운 커뮤니티 reset 발표 알림
+- [Codex Resets](https://codex-resets.com)의 새로운 커뮤니티 reset 발표 및 사전 예고 알림
 - Telegram에서 ChatGPT 재로그인 및 알림 언어 변경
 - 선택적으로 5시간 한도가 100%일 때 작은 Codex 요청을 보내 실제 사용 주기 시작
 
@@ -102,6 +102,8 @@ docker compose run --rm codex-usage login
 
 사용량 조회가 성공하면 [Codex Resets](https://codex-resets.com)의 공개 API도 확인합니다. 마지막으로 확인한 reset ID와 다른 새 발표가 있을 때 별도 메시지를 한 번만 보냅니다. 외부 API가 일시적으로 실패해도 Codex 잔여량 조회는 계속 동작합니다.
 
+예정된 reset은 `📅 Codex reset 예고` 메시지로 따로 보내며, 예정 시각은 설정된 시간대로 표시합니다. 설치 또는 업데이트 후 첫 조회에서는 이미 등록된 예고도 받습니다. 같은 예고는 재시작 후에도 중복 전송하지 않고, 예정 시각이나 reset 종류가 바뀌면 변경 알림을 보냅니다. 전송 실패 시 다음 조회에서 재시도합니다. 예정 시각이 지났다는 이유만으로 reset 완료로 판단하지 않습니다.
+
 Codex Resets는 커뮤니티 추적 정보이며 OpenAI의 공식 발표나 보장을 의미하지 않습니다.
 
 ## 5시간 prime 사용하기
@@ -118,8 +120,10 @@ FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
 실행 알림은 다음처럼 표시됩니다.
 
 ```text
+⚡ Prime 실행
+
 ⏰ 5시간 잔여량: 100.00%
-⚡ Prime 실행: Codex에 1+1 요청을 보냅니다.
+Codex에 1+1 요청을 보냅니다.
 ```
 
 prime은 기본적으로 꺼져 있으며 소량의 Codex 사용량을 소비합니다. 같은 주기에서 반복 요청하지 않도록 실행 상태를 저장하고, API 반영을 기다리는 최소 간격은 기본 20분입니다. `/prime-on`을 다시 보내면 저장된 prime 실행 상태가 초기화되어 다음 조회에서 다시 실행될 수 있습니다.

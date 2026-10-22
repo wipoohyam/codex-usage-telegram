@@ -16,11 +16,7 @@ import {
 } from "./codex-client.js";
 import { loadState, saveState } from "./state.js";
 import { normalizeLanguage, translate } from "./i18n.js";
-import {
-  fetchResetStatus,
-  formatResetAnnouncement,
-  shouldNotifyNewReset,
-} from "./reset-status.js";
+import { notifyExternalResets } from "./reset-status.js";
 import {
   deleteTelegramMessage,
   getTelegramUpdates,
@@ -169,35 +165,7 @@ async function poll(config, { forceSend = false } = {}) {
 
 async function checkForNewExternalReset(config) {
   try {
-    const state = await loadState(config.stateFile);
-    const result = await fetchResetStatus({
-      etag: state.codexResetsEtag,
-      timeoutMs: config.requestTimeoutMs,
-    });
-    if (result.notModified) return;
-
-    const latestReset = result.latestReset;
-    const isNewReset = shouldNotifyNewReset(latestReset, state);
-
-    if (isNewReset) {
-      await sendMessage(
-        config,
-        formatResetAnnouncement(latestReset, {
-          language: normalizeLanguage(state.language),
-          timeZone: config.timeZone,
-        }),
-      );
-    }
-
-    const latestState = await loadState(config.stateFile);
-    await saveState(config.stateFile, {
-      ...latestState,
-      codexResetsBaselineInitialized: true,
-      codexResetsEtag: result.etag,
-      lastCodexResetId: latestReset?.id ?? latestState.lastCodexResetId ?? null,
-      lastCodexResetCheckedAt: new Date().toISOString(),
-      ...(isNewReset ? { lastCodexResetNotifiedAt: new Date().toISOString() } : {}),
-    });
+    await notifyExternalResets(config);
   } catch (error) {
     console.error(
       `Codex Resets check failed: ${error instanceof Error ? error.message : String(error)}`,

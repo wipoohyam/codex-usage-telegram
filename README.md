@@ -13,7 +13,7 @@ A self-hosted Telegram bot that shows your ChatGPT Codex limits and reset times,
 - Send `/status` to see five-hour, weekly, and other Codex limits
 - See exact reset times, countdowns, reset-credit balances, and expirations
 - Receive automatic notifications when a displayed limit or reset time changes
-- Receive new community reset announcements from [Codex Resets](https://codex-resets.com)
+- Receive community reset announcements and advance notices from [Codex Resets](https://codex-resets.com)
 - Renew your ChatGPT login and change notification language from Telegram
 - Optionally start an unused five-hour window with a tiny Codex request
 
@@ -104,6 +104,8 @@ By default, the bot checks Codex every 20 minutes.
 
 After each successful usage check, the bot queries the public [Codex Resets](https://codex-resets.com) API. It sends one separate alert when the latest reset ID changes. A failure of this external service does not interrupt Codex usage monitoring.
 
+Scheduled resets produce a separate `📅 Codex reset scheduled` notice with the expected time in your configured time zone. An existing pending announcement is sent on the first check after installation or upgrade. The same announcement is sent once, including across restarts; a changed expected time or reset type produces an updated notice. Delivery failures are retried on the next check. A passed expected time alone does not confirm that a reset has occurred.
+
 Codex Resets is community-tracked data, not an official OpenAI announcement or commitment.
 
 ## Optional five-hour prime
@@ -120,8 +122,10 @@ FULL_USAGE_PRIME_COOLDOWN_MINUTES=20
 The execution notice looks like this:
 
 ```text
+⚡ Prime started
+
 ⏰ Five-hour remaining: 100.00%
-⚡ Prime: sending a 1+1 request to Codex.
+Sending a 1+1 request to Codex.
 ```
 
 Prime is disabled by default and consumes a small amount of Codex usage. The bot persists execution state to avoid repeating the request in the same cycle. The default minimum retry interval is 20 minutes. Sending `/prime-on` again clears the saved prime state, so the next check may run it again.

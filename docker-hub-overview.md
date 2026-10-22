@@ -7,7 +7,7 @@ A self-hosted Telegram bot for ChatGPT Codex usage limits, reset times, reset cr
 - Five-hour, weekly, and other Codex limits in Telegram
 - Exact reset times and remaining-time countdowns
 - Automatic reports only when a displayed value meaningfully changes
-- New reset announcements from [Codex Resets](https://codex-resets.com)
+- New reset announcements and advance notices from [Codex Resets](https://codex-resets.com)
 - English, Korean, Chinese, and Japanese notifications
 - ChatGPT reauthentication from the server or Telegram
 - Optional five-hour prime for initializing an unused reset window
@@ -62,6 +62,8 @@ Send `/status` to the bot to see your current limits.
 The bot checks every 20 minutes by default. Automatic usage reports require a changed percentage or reset time and are sent at least 60 minutes apart. Reset-time movement within three minutes is treated as API jitter.
 
 After each successful usage check, the bot also checks [Codex Resets](https://codex-resets.com). A new reset ID produces one separate alert. This is community-tracked data, not an official OpenAI announcement. Failure of that external API does not interrupt Codex usage monitoring.
+
+Scheduled resets produce a separate advance notice with the expected time in your configured time zone. Existing pending announcements are sent on the first check after installation or upgrade. Notices are deduplicated across restarts, schedule changes produce an updated notice, and failed deliveries are retried. A passed estimate does not confirm completion. Prime execution notices identify the action on their first line.
 
 ## Optional five-hour prime
 
